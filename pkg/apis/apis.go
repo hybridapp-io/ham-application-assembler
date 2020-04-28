@@ -20,7 +20,7 @@ import (
 
 	dplapis "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis"
 
-	hdplapis "github.com/IBM/hybriddeployable-operator/pkg/apis"
+	hdplapis "github.com/hybridapp-io/ham-deployable-operator/pkg/apis"
 )
 
 // AddToSchemes may be used to add all resources defined in the project to a Scheme

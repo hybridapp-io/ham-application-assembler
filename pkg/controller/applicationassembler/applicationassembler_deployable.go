@@ -27,8 +27,7 @@ import (
 
 	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
 
-	deployerv1alpha1 "github.com/IBM/deployer-operator/pkg/apis/app/v1alpha1"
-	hdplv1 "github.com/IBM/hybriddeployable-operator/pkg/apis/app/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(instance *corev1alpha1.ApplicationAssembler,
@@ -51,19 +50,19 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		return err
 	}
 
-	newtpl := &hdplv1.HybridTemplate{}
-	newtpl.DeployerType = hdplv1.DefaultDeployerType
+	newtpl := &hdplv1alpha1.HybridTemplate{}
+	newtpl.DeployerType = hdplv1alpha1.DefaultDeployerType
 
 	annotations := dpl.GetAnnotations()
-	if annotations != nil && annotations[deployerv1alpha1.DeployerType] != "" {
-		newtpl.DeployerType = annotations[deployerv1alpha1.DeployerType]
+	if annotations != nil && annotations[hdplv1alpha1.DeployerType] != "" {
+		newtpl.DeployerType = annotations[hdplv1alpha1.DeployerType]
 	}
 
 	newtpl.Template = dpl.Spec.Template
 
 	key.Name = r.genHybridDeployableName(instance, dpl)
 	key.Namespace = instance.Namespace
-	hdpl := &hdplv1.HybridDeployable{}
+	hdpl := &hdplv1alpha1.Deployable{}
 
 	err = r.Get(context.TODO(), key, hdpl)
 	if err != nil {
@@ -84,7 +83,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 	labels[corev1alpha1.LabelApplicationPrefix+appID] = appID
 	hdpl.SetLabels(labels)
 
-	htpls := []hdplv1.HybridTemplate{*newtpl}
+	htpls := []hdplv1alpha1.HybridTemplate{*newtpl}
 
 	for _, htpl := range hdpl.Spec.HybridTemplates {
 		if htpl.DeployerType != newtpl.DeployerType {
@@ -114,7 +113,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 	return err
 }
 
-func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1.HybridDeployable, dpl *dplv1.Deployable) error {
+func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1alpha1.Deployable, dpl *dplv1.Deployable) error {
 	prule := &prulev1.PlacementRule{}
 	key := types.NamespacedName{Namespace: hdpl.Namespace, Name: hdpl.Name}
 
@@ -145,7 +144,7 @@ func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl
 		objdecision,
 	}
 
-	hdpl.Spec.Placement = &hdplv1.HybridPlacement{}
+	hdpl.Spec.Placement = &hdplv1alpha1.HybridPlacement{}
 	hdpl.Spec.Placement.PlacementRef = &corev1.ObjectReference{Name: prule.Name}
 
 	if prule.UID != "" {

@@ -31,8 +31,7 @@ import (
 
 	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
 
-	deployerv1alpha1 "github.com/IBM/deployer-operator/pkg/apis/app/v1alpha1"
-	hdplv1 "github.com/IBM/hybriddeployable-operator/pkg/apis/app/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(instance *corev1alpha1.ApplicationAssembler,
@@ -51,7 +50,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	var key types.NamespacedName
 	key.Name = r.genHybridDeployableName(instance, ucobj)
 	key.Namespace = instance.Namespace
-	hdpl := &hdplv1.HybridDeployable{}
+	hdpl := &hdplv1alpha1.Deployable{}
 
 	labels := hdpl.GetLabels()
 	if labels == nil {
@@ -78,7 +77,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 		return err
 	}
 
-	htpls := []hdplv1.HybridTemplate{*newtpl}
+	htpls := []hdplv1alpha1.HybridTemplate{*newtpl}
 
 	for _, htpl := range hdpl.Spec.HybridTemplates {
 		if htpl.DeployerType != newtpl.DeployerType {
@@ -91,7 +90,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 		Name:      deployer.Name,
 		Namespace: deployer.Namespace,
 	}
-	hdpl.Spec.Placement = &hdplv1.HybridPlacement{}
+	hdpl.Spec.Placement = &hdplv1alpha1.HybridPlacement{}
 	hdpl.Spec.Placement.Deployers = []corev1.ObjectReference{deployerref}
 
 	err = r.patchObject(hdpl, ucobj)
@@ -109,13 +108,13 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 }
 
 // Assuming only 1 deployer in 1 namespace
-func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1.HybridTemplate,
-	*deployerv1alpha1.Deployer, error) {
+func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1alpha1.HybridTemplate,
+	*hdplv1alpha1.Deployer, error) {
 	var err error
 
-	var deployer *deployerv1alpha1.Deployer
+	var deployer *hdplv1alpha1.Deployer
 
-	deployerlist := &deployerv1alpha1.DeployerList{}
+	deployerlist := &hdplv1alpha1.DeployerList{}
 
 	err = r.List(context.TODO(), deployerlist, &client.ListOptions{Namespace: ucobj.GetNamespace()})
 	if err != nil {
@@ -129,7 +128,7 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 
 	// check deployerset for cluster namespace
 	if deployer == nil {
-		deployersetlist := &deployerv1alpha1.DeployerSetList{}
+		deployersetlist := &hdplv1alpha1.DeployerSetList{}
 
 		err = r.List(context.TODO(), deployersetlist, &client.ListOptions{Namespace: ucobj.GetNamespace()})
 		if err != nil {
@@ -144,7 +143,7 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 
 			for _, dply := range item.Spec.Deployers {
 				if dply.Key == item.Spec.DefaultDeployer {
-					deployer = &deployerv1alpha1.Deployer{}
+					deployer = &hdplv1alpha1.Deployer{}
 					dply.Spec.DeepCopyInto(&deployer.Spec)
 
 					break
@@ -154,17 +153,17 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 	}
 
 	if deployer == nil {
-		deployer = &deployerv1alpha1.Deployer{}
+		deployer = &hdplv1alpha1.Deployer{}
 		deployer.Spec.Type = corev1alpha1.DefaultDeployerType
 		deployer.Namespace = ucobj.GetNamespace()
 	}
 
-	htpl := &hdplv1.HybridTemplate{}
+	htpl := &hdplv1alpha1.HybridTemplate{}
 	htpl.DeployerType = deployer.Spec.Type
 
 	annotations := ucobj.GetAnnotations()
-	if annotations != nil && annotations[deployerv1alpha1.DeployerType] != "" {
-		htpl.DeployerType = annotations[deployerv1alpha1.DeployerType]
+	if annotations != nil && annotations[hdplv1alpha1.DeployerType] != "" {
+		htpl.DeployerType = annotations[hdplv1alpha1.DeployerType]
 	}
 
 	htpl.Template = &runtime.RawExtension{}
@@ -178,14 +177,14 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 var (
 	obsoleteAnnotations = []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
-		hdplv1.HostingHybridDeployable,
+		hdplv1alpha1.HostingHybridDeployable,
 		dplv1.AnnotationHosting,
 		subv1.AnnotationHosting,
 		subv1.AnnotationSyncSource,
 	}
 	obsoleteLabels = []string{
-		hdplv1.HostingHybridDeployable,
-		hdplv1.ControlledBy,
+		hdplv1alpha1.HostingHybridDeployable,
+		hdplv1alpha1.ControlledBy,
 	}
 )
 

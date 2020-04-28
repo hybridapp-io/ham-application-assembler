@@ -3,8 +3,7 @@ module github.com/hybridapp-io/ham-application-assembler
 go 1.13
 
 require (
-	github.com/IBM/deployer-operator v0.0.0-20200406145902-80e6633b6f16
-	github.com/IBM/hybriddeployable-operator v0.0.0-20200407174702-69f7ac6bdd44
+	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200428132152-ddeef5e522f2
 	github.com/kubernetes-sigs/application v0.8.1
 	github.com/onsi/gomega v1.9.0
 	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200409001040-158722845851

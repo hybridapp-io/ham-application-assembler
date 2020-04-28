@@ -32,8 +32,7 @@ import (
 
 	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
 
-	deployerv1alpha1 "github.com/IBM/deployer-operator/pkg/apis/app/v1alpha1"
-	hybriddplv1 "github.com/IBM/hybriddeployable-operator/pkg/apis/app/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 	prulev1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
@@ -175,7 +174,7 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 	defer c.Delete(context.TODO(), app)
 
 	hybrddplyblKey := types.NamespacedName{Name: applicationAssemblerKey.Name + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
-	hybrddplybl := &hybriddplv1.HybridDeployable{}
+	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), hybrddplybl)
 
@@ -247,7 +246,7 @@ func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployable
 	defer c.Delete(context.TODO(), app)
 
 	hybrddplyblKey := types.NamespacedName{Name: applicationAssemblerKey.Name + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
-	hybrddplybl := &hybriddplv1.HybridDeployable{}
+	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 
 }
@@ -280,13 +279,13 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 
 	deployerType := "configmap"
 
-	deployer := &deployerv1alpha1.Deployer{
+	deployer := &hdplv1alpha1.Deployer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deployerKey.Name,
 			Namespace: deployerKey.Namespace,
 			Labels:    map[string]string{"deployer-type": deployerType},
 		},
-		Spec: deployerv1alpha1.DeployerSpec{
+		Spec: hdplv1alpha1.DeployerSpec{
 			Type: deployerType,
 		},
 	}
@@ -296,16 +295,16 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 		Namespace: "default",
 	}
 
-	deployerSet := &deployerv1alpha1.DeployerSet{
+	deployerSet := &hdplv1alpha1.DeployerSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterName,
 			Namespace: deployerSetKey.Namespace,
 		},
-		Spec: deployerv1alpha1.DeployerSetSpec{
-			Deployers: []deployerv1alpha1.DeployerSpecDescriptor{
+		Spec: hdplv1alpha1.DeployerSetSpec{
+			Deployers: []hdplv1alpha1.DeployerSpecDescriptor{
 				{
 					Key: clusterName + "/" + deployer.GetName(),
-					Spec: deployerv1alpha1.DeployerSpec{
+					Spec: hdplv1alpha1.DeployerSpec{
 						Type: deployerType,
 					},
 				},
@@ -362,7 +361,7 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	hybrddplyblKey := types.NamespacedName{Name: applicationAssemblerKey.Name + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
-	hybrddplybl := &hybriddplv1.HybridDeployable{}
+	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 
 	dplyr := deployer.DeepCopy()

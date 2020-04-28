@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	depv1alpha1 "github.com/IBM/deployer-operator/pkg/apis/app/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 )
@@ -80,7 +80,7 @@ var (
 			Name:      mc1ServiceName,
 			Namespace: mc1Name,
 			Annotations: map[string]string{
-				depv1alpha1.AnnotationDiscovered: "true",
+				hdplv1alpha1.AnnotationDiscovered: "true",
 			},
 			Labels: map[string]string{
 				selectorName: appName,
@@ -118,7 +118,7 @@ var (
 			Name:      mc2ServiceName,
 			Namespace: mc2Name,
 			Annotations: map[string]string{
-				depv1alpha1.AnnotationDiscovered: "true",
+				hdplv1alpha1.AnnotationDiscovered: "true",
 			},
 			Labels: map[string]string{
 				selectorName: appName,

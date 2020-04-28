@@ -32,20 +32,6 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/GoogleCloudPlatform/k8s-cloud-provider v0.0.0-20181220005116-f8e995905100/go.mod h1:iroGtC8B3tQiqtds1l+mgk/BBOrxbqjH+eUfFQYRc14=
 github.com/GoogleCloudPlatform/k8s-cloud-provider v0.0.0-20190822182118-27a4ced34534/go.mod h1:iroGtC8B3tQiqtds1l+mgk/BBOrxbqjH+eUfFQYRc14=
-github.com/IBM/deployer-operator v0.0.0-20200406145902-80e6633b6f16 h1:awSZ1GGiZ0TJXdQsfQfzA2HGPq+EHFTvg/LQditjw6g=
-github.com/IBM/deployer-operator v0.0.0-20200406145902-80e6633b6f16/go.mod h1:V22gVzdnIGuQdmUBP+bVo8TVYxD/Z757E1Aw1GsNUYY=
-github.com/IBM/hybriddeployable-operator v0.0.0-20200407174702-69f7ac6bdd44 h1:RKY4wr6B2CDXvIM0oFofLiNHjv1+/9QmcleUDkqFi88=
-github.com/IBM/hybriddeployable-operator v0.0.0-20200407174702-69f7ac6bdd44/go.mod h1:dnUfmfuJyLKnULUJLDoD/oL17nxmfjveM+XIlordo4g=
-github.com/IBM/multicloud-operators-channel v0.0.0-20191106021206-61ab358c6b28 h1:6yZ1NHaeRco2lA1Sy+HVoZ44sQ6VJ6cTppt8R8l/tyY=
-github.com/IBM/multicloud-operators-channel v0.0.0-20191106021206-61ab358c6b28/go.mod h1:Q+uqAWSSvG0CvyUolAzEYE+BWM3NoZi5XyenjMskl7o=
-github.com/IBM/multicloud-operators-deployable v0.0.0-20191106030805-be79868c4e0f/go.mod h1:9HTudFRHHpUxckF8X3ljVjtvLMbKJIebwLLyr5ak0+Q=
-github.com/IBM/multicloud-operators-deployable v0.0.0-20191121134707-a429faaac3b4 h1:Hc7UDy49cjAdVVADwTp4OK2sPZSopL+2uEDjZMXGS48=
-github.com/IBM/multicloud-operators-deployable v0.0.0-20191121134707-a429faaac3b4/go.mod h1:ApSlB2lG+xWZ6PccrZWNxIT91V3iZJ3froY2OuQ0NVU=
-github.com/IBM/multicloud-operators-placementrule v0.0.0-20191106021205-80eeda99597f h1:oLZ1y6XfEcFYQNKrAJRx2g5VNdBLwBQI2aMEerREnNs=
-github.com/IBM/multicloud-operators-placementrule v0.0.0-20191106021205-80eeda99597f/go.mod h1:7cCjoormsMG/S1lDlmCjqRs4uwjCdsj9m5AwZHKQ0PQ=
-github.com/IBM/multicloud-operators-subscription v0.0.0-20200207022944-915315edaf5d h1:3HkuRo8Nrdc+TiWCAIkCgL8FdQfUlngm37u2IfZTdbs=
-github.com/IBM/multicloud-operators-subscription v0.0.0-20200207022944-915315edaf5d/go.mod h1:paGGnvKG4jLJ7X7BdHii0CleLdi1bwwy6C1lXk2Mqjw=
-github.com/IBM/multicloud-operators-subscription-release v0.0.0-20200127192841-d79fb0fd582b/go.mod h1:KJfNoP7lqOC/uVh7z1oyz+EAdf+Iyqv29BG/JdaC7KU=
 github.com/JeffAshton/win_pdh v0.0.0-20161109143554-76bb4ee9f0ab/go.mod h1:3VYc5hodBMJ5+l/7J4xAyMeuM2PNuepvHlGs8yilUCA=
 github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=
 github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=
@@ -96,7 +82,6 @@ github.com/auth0/go-jwt-middleware v0.0.0-20170425171159-5493cabe49f7/go.mod h1:
 github.com/aws/aws-sdk-go v1.16.26/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/aws/aws-sdk-go v1.17.4/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/aws/aws-sdk-go v1.17.7/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
-github.com/aws/aws-sdk-go-v2 v0.15.0/go.mod h1:pFLIN9LDjOEwHfruGweAXEq0XaD6uRkY8FsRkxhuBIg=
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
 github.com/bazelbuild/bazel-gazelle v0.0.0-20181012220611-c728ce9f663e/go.mod h1:uHBSeeATKpVazAACZBDPL/Nk/UhQDDsJWDlqYJo8/Us=
 github.com/bazelbuild/buildtools v0.0.0-20180226164855-80c7f0d45d7e/go.mod h1:5JP0TXzWDHXv8qvxRC4InIazwdyDseBDbzESUMKk1yU=
@@ -455,6 +440,8 @@ github.com/helm/helm-2to3 v0.2.0/go.mod h1:jQUVAWB0bM7zNIqKPIfHFzuFSK0kHYovJrjO+
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/huandu/xstrings v1.2.0/go.mod h1:DvyZB1rfVYsBIigL8HwpZgxHwXozlTgGqn63UyNX5k4=
+github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200428132152-ddeef5e522f2 h1:j0m/oM6rnuCfQs1gTNgSqsQxyoGdQkNC3Yk/vnRsF7Q=
+github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200428132152-ddeef5e522f2/go.mod h1:JcgqFZkCJyNZA/xaH8cyjmVOoG7ajZ3W8PICqChOxgU=
 github.com/iancoleman/strcase v0.0.0-20180726023541-3605ed457bf7/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
@@ -1140,7 +1127,6 @@ k8s.io/gengo v0.0.0-20190822140433-26a664648505/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8
 k8s.io/gengo v0.0.0-20191010091904-7fa3014cb28f/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
 k8s.io/heapster v1.2.0-beta.1/go.mod h1:h1uhptVXMwC8xtZBYsPXKVi8fpdlYkTs6k949KozGrM=
 k8s.io/helm v2.15.0+incompatible/go.mod h1:LZzlS4LQBHfciFOurYBFkCMTaZ0D1l+p0teMg7TSULI=
-k8s.io/helm v2.15.1+incompatible/go.mod h1:LZzlS4LQBHfciFOurYBFkCMTaZ0D1l+p0teMg7TSULI=
 k8s.io/helm v2.16.1+incompatible/go.mod h1:LZzlS4LQBHfciFOurYBFkCMTaZ0D1l+p0teMg7TSULI=
 k8s.io/klog v0.0.0-20181102134211-b9b56d5dfc92/go.mod h1:Gq+BEi5rUBO/HRz0bTSXDUcqjScdoY3a9IHpCEIOOfk=
 k8s.io/klog v0.1.0/go.mod h1:Gq+BEi5rUBO/HRz0bTSXDUcqjScdoY3a9IHpCEIOOfk=

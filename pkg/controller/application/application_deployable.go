@@ -27,9 +27,8 @@ import (
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
-
-	depv1alpha1 "github.com/IBM/deployer-operator/pkg/apis/app/v1alpha1"
 )
 
 // Locates a deployable wrapping an application in a mnaged cluster nanespace
@@ -56,7 +55,7 @@ func (r *ReconcileApplication) locateAppDeployable(appKey types.NamespacedName, 
 		}
 
 		annotations := dpl.GetAnnotations()
-		if srcobj, ok := annotations[depv1alpha1.SourceObject]; ok {
+		if srcobj, ok := annotations[hdplv1alpha1.SourceObject]; ok {
 			if srcobj == appKey.String() {
 				return dpl.DeepCopy(), nil
 			}
@@ -172,11 +171,11 @@ func (r *ReconcileApplication) prepareDeployable(deployable *dplv1.Deployable, a
 		annotations = make(map[string]string)
 	}
 
-	annotations[depv1alpha1.SourceObject] = types.NamespacedName{Namespace: app.GetNamespace(), Name: app.GetName()}.String()
+	annotations[hdplv1alpha1.SourceObject] = types.NamespacedName{Namespace: app.GetNamespace(), Name: app.GetName()}.String()
 	if r.isAppDiscoveryEnabled(app) {
-		annotations[depv1alpha1.AnnotationDiscovered] = app.Annotations[depv1alpha1.AnnotationDiscovered]
-	} else if _, ok := annotations[depv1alpha1.AnnotationDiscovered]; ok {
-		delete(annotations, annotations[depv1alpha1.AnnotationDiscovered])
+		annotations[hdplv1alpha1.AnnotationDiscovered] = app.Annotations[hdplv1alpha1.AnnotationDiscovered]
+	} else if _, ok := annotations[hdplv1alpha1.AnnotationDiscovered]; ok {
+		delete(annotations, annotations[hdplv1alpha1.AnnotationDiscovered])
 	}
 	deployable.SetAnnotations(annotations)
 }

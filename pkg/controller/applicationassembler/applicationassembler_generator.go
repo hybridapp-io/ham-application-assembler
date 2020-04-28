@@ -29,7 +29,7 @@ import (
 
 	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
 
-	hdplv1alpha1 "github.com/IBM/hybriddeployable-operator/pkg/apis/app/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *corev1alpha1.ApplicationAssembler) (*sigappv1beta1.Application, error) {
@@ -82,7 +82,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *core
 	return nil
 }
 
-func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.HybridDeployable, metaobj metav1.Object) error {
+func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.Deployable, metaobj metav1.Object) error {
 	annotations := metaobj.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
