@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: raleigh
+---
+apiVersion: app.cp4mcm.ibm.com/v1alpha1
+kind: Deployable
+metadata:
+  annotations:
+      app.cp4mcm.ibm.com/deployer-type: kubernetes
+  name: db2
+  namespace: raleigh
+spec:
+  template:
+    apiVersion: apps/v1
+    kind: Deployment
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+          - image: nginx:1.7.9
+            name: nginx
+            ports:
+            - containerPort: 80

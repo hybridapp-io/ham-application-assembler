@@ -1,0 +1,12 @@
+apiVersion: app.cp4mcm.ibm.com/v1alpha1
+kind: ApplicationAssembler
+metadata:
+  name: simple
+spec:
+  applicationObject:
+    name: simple
+  components:
+  - apiVersion: app.cp4mcm.ibm.com/v1alpha1
+    kind: Deployable
+    name: db2
+    namespace: raleigh

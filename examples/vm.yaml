@@ -1,0 +1,45 @@
+apiVersion: app.cp4mcm.ibm.com/v1alpha1
+kind: Deployable
+metadata:
+  annotations:
+      app.cp4mcm.ibm.com/deployer-type: cloudforms
+  name: cloudforms
+  namespace: reave
+spec:
+  template:
+    apiVersion: cloudforms.ibm.com/v1alpha1
+    kind: Provision
+    metadata:
+      name: fit-vm17-182
+      namespace: "reave"
+    spec:
+      cfConnection:
+        name: fit3
+      options:
+        version: "1.1"
+        template_fields: 
+          guid: "9cd478ed-5380-41be-b583-9bb83260e9f4"
+        dns_servers: 9.42.106.2
+        dns_sufixes: rtp.raleigh.ibm.com
+        vm_fields: 
+          vm_name: fit-vm17-182
+          provision_type: vmware
+          placement_dc_name: 1000000000002
+          placement_rp_name: 1000000000001
+          placement_cluster_name: 1000000000001
+          placement_host_name: 1000000000013
+          placement_ds_name: 1000000000009
+          #placement_folder_name: Radu
+          vm_description: "Provision VM using Cloudforms api"
+          vm_memory: 1024
+          vlan: dvs_840
+          ip_addr: 9.37.194.182
+          gateway: 9.37.194.1
+          subnet_mask: 255.255.255.0
+          linux_domain_name: rtp.raleigh.ibm.com
+          hostname: fit-vm17-182
+        requester: 
+          owner_first_name: Radu
+          owner_manager: Ian Watts
+          owner_last_name: Mateescu
+          owner_email: "mateescu@ca.ibm.com"      

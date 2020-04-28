@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ham-application-assembler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ham-application-assembler
+  template:
+    metadata:
+      labels:
+        name: ham-application-assembler
+    spec:
+      serviceAccountName: ham-application-assembler
+      containers:
+        - name: ham-application-assembler
+          # Replace this with the built image name
+          image: REPLACE_IMAGE
+          command:
+          - ham-application-assembler
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "ham-application-assembler"
