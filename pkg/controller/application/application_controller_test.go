@@ -21,8 +21,6 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
-
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,9 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
-
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 var (
@@ -143,7 +142,7 @@ var (
 			Namespace: "default",
 			Labels:    selectorLabels,
 			Annotations: map[string]string{
-				corev1alpha1.AnnotationDiscover: corev1alpha1.DiscoveryEnabled,
+				toolsv1alpha1.AnnotationDiscover: toolsv1alpha1.DiscoveryEnabled,
 			},
 		},
 		Spec: sigappv1beta1.ApplicationSpec{
@@ -305,14 +304,14 @@ func TestDiscoveredComponents(t *testing.T) {
 	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(2))
 	components := []sigappv1beta1.ObjectStatus{
 		{
-			Group: corev1alpha1.DeployableGVK.Group,
-			Kind:  corev1alpha1.DeployableGVK.Kind,
+			Group: toolsv1alpha1.DeployableGVK.Group,
+			Kind:  toolsv1alpha1.DeployableGVK.Kind,
 			Name:  dpl1.Name,
 			Link:  dpl1.SelfLink,
 		},
 		{
-			Group: corev1alpha1.DeployableGVK.Group,
-			Kind:  corev1alpha1.DeployableGVK.Kind,
+			Group: toolsv1alpha1.DeployableGVK.Group,
+			Kind:  toolsv1alpha1.DeployableGVK.Kind,
 			Name:  dpl2.Name,
 			Link:  dpl2.SelfLink,
 		},
@@ -359,14 +358,14 @@ func TestApplicationAssembler(t *testing.T) {
 
 	// Create the Application object and expect the hybrid deployables in its status
 	app := application.DeepCopy()
-	app.Annotations[corev1alpha1.AnnotationCreateAssembler] = corev1alpha1.DiscoveryEnabled
+	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.DiscoveryEnabled
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), app)
 
 	// wait for reconcile to finish
 	g.Eventually(appRequests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	appasm := &corev1alpha1.ApplicationAssembler{}
+	appasm := &toolsv1alpha1.ApplicationAssembler{}
 	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
 
 	// validate the appasm components
@@ -375,15 +374,15 @@ func TestApplicationAssembler(t *testing.T) {
 	components := []*corev1.ObjectReference{
 		{
 			Namespace:  dpl1.Namespace,
-			Kind:       corev1alpha1.DeployableGVK.Kind,
+			Kind:       toolsv1alpha1.DeployableGVK.Kind,
 			Name:       dpl1.Name,
-			APIVersion: corev1alpha1.DeployableGVK.Group + "/" + corev1alpha1.DeployableGVK.Version,
+			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
 		},
 		{
 			Namespace:  dpl2.Namespace,
-			Kind:       corev1alpha1.DeployableGVK.Kind,
+			Kind:       toolsv1alpha1.DeployableGVK.Kind,
 			Name:       dpl2.Name,
-			APIVersion: corev1alpha1.DeployableGVK.Group + "/" + corev1alpha1.DeployableGVK.Version,
+			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
 		},
 	}
 
@@ -393,5 +392,5 @@ func TestApplicationAssembler(t *testing.T) {
 
 	// validate the hybrid-discover-create-assembler annotation
 	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
-	g.Expect(app.Annotations[corev1alpha1.AnnotationCreateAssembler]).To(Equal(corev1alpha1.AssemblerCreationCompleted))
+	g.Expect(app.Annotations[toolsv1alpha1.AnnotationCreateAssembler]).To(Equal(toolsv1alpha1.AssemblerCreationCompleted))
 }

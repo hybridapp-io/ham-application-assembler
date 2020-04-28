@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 
@@ -75,12 +75,12 @@ var (
 		Namespace: "default",
 	}
 
-	applicationAssembler = &corev1alpha1.ApplicationAssembler{
+	applicationAssembler = &toolsv1alpha1.ApplicationAssembler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      applicationAssemblerKey.Name,
 			Namespace: applicationAssemblerKey.Namespace,
 		},
-		Spec: corev1alpha1.ApplicationAssemblerSpec{
+		Spec: toolsv1alpha1.ApplicationAssemblerSpec{
 			Application: corev1.ObjectReference{
 				Name: applicationAssemblerKey.Name,
 			},
@@ -317,12 +317,12 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 		Namespace: "default",
 	}
 
-	barApplicationAssembler := &corev1alpha1.ApplicationAssembler{
+	barApplicationAssembler := &toolsv1alpha1.ApplicationAssembler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      barApplicationAssemblerKey.Name,
 			Namespace: barApplicationAssemblerKey.Namespace,
 		},
-		Spec: corev1alpha1.ApplicationAssemblerSpec{},
+		Spec: toolsv1alpha1.ApplicationAssemblerSpec{},
 	}
 
 	var c client.Client
@@ -372,7 +372,7 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	g.Expect(c.Create(context.TODO(), dset)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), dset)
 
-	barApplicationAssembler.Spec = corev1alpha1.ApplicationAssemblerSpec{
+	barApplicationAssembler.Spec = toolsv1alpha1.ApplicationAssemblerSpec{
 		Application: corev1.ObjectReference{
 			Name: barApplicationAssemblerKey.Name,
 		},

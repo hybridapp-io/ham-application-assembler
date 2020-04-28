@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
 	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog"
+
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 )
 
 const (
@@ -39,8 +40,8 @@ const (
 
 var (
 	applicationAssemblerGVK = schema.GroupVersionKind{
-		Group:   corev1alpha1.SchemeGroupVersion.Group,
-		Version: corev1alpha1.SchemeGroupVersion.Version,
+		Group:   toolsv1alpha1.SchemeGroupVersion.Group,
+		Version: toolsv1alpha1.SchemeGroupVersion.Version,
 		Kind:    "ApplicationAssembler",
 	}
 
@@ -52,8 +53,8 @@ var (
 )
 
 func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Application) bool {
-	if _, enabled := app.GetAnnotations()[corev1alpha1.AnnotationDiscover]; !enabled ||
-		app.GetAnnotations()[corev1alpha1.AnnotationDiscover] != corev1alpha1.DiscoveryEnabled {
+	if _, enabled := app.GetAnnotations()[toolsv1alpha1.AnnotationDiscover]; !enabled ||
+		app.GetAnnotations()[toolsv1alpha1.AnnotationDiscover] != toolsv1alpha1.DiscoveryEnabled {
 		return false
 	}
 
@@ -61,8 +62,8 @@ func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Applicat
 }
 
 func (r *ReconcileApplication) isCreateAssemblerEnabled(app *sigappv1beta1.Application) bool {
-	if _, enabled := app.GetAnnotations()[corev1alpha1.AnnotationCreateAssembler]; !enabled ||
-		app.GetAnnotations()[corev1alpha1.AnnotationCreateAssembler] != corev1alpha1.DiscoveryEnabled {
+	if _, enabled := app.GetAnnotations()[toolsv1alpha1.AnnotationCreateAssembler]; !enabled ||
+		app.GetAnnotations()[toolsv1alpha1.AnnotationCreateAssembler] != toolsv1alpha1.DiscoveryEnabled {
 		return false
 	}
 

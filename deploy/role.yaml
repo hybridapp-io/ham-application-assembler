@@ -90,3 +90,15 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - tools.hybridapp.io
+  resources:
+  - '*'
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

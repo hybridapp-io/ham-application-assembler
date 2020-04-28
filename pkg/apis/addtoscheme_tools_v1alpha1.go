@@ -15,7 +15,7 @@
 package apis
 
 import (
-	"github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
+	"github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 )
 
 func init() {

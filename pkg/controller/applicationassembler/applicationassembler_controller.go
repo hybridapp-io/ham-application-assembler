@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 )
 
@@ -71,10 +71,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource ApplicationAssembler
-	err = c.Watch(&source.Kind{Type: &corev1alpha1.ApplicationAssembler{}}, &handler.EnqueueRequestForObject{}, predicate.Funcs{
+	err = c.Watch(&source.Kind{Type: &toolsv1alpha1.ApplicationAssembler{}}, &handler.EnqueueRequestForObject{}, predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			newaa := e.ObjectNew.(*corev1alpha1.ApplicationAssembler)
-			oldaa := e.ObjectOld.(*corev1alpha1.ApplicationAssembler)
+			newaa := e.ObjectNew.(*toolsv1alpha1.ApplicationAssembler)
+			oldaa := e.ObjectOld.(*toolsv1alpha1.ApplicationAssembler)
 
 			if !reflect.DeepEqual(oldaa.Spec, newaa.Spec) {
 				return true
@@ -120,7 +120,7 @@ func (r *ReconcileApplicationAssembler) Reconcile(request reconcile.Request) (re
 	klog.Info("Reconciling ApplicationAssembler ", request)
 
 	// Fetch the ApplicationAssembler instance
-	instance := &corev1alpha1.ApplicationAssembler{}
+	instance := &toolsv1alpha1.ApplicationAssembler{}
 
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
@@ -155,9 +155,9 @@ func (r *ReconcileApplicationAssembler) Reconcile(request reconcile.Request) (re
 	return r.concludeReconcile(instance, err)
 }
 
-func (r *ReconcileApplicationAssembler) concludeReconcile(instance *corev1alpha1.ApplicationAssembler, err error) (reconcile.Result, error) {
+func (r *ReconcileApplicationAssembler) concludeReconcile(instance *toolsv1alpha1.ApplicationAssembler, err error) (reconcile.Result, error) {
 	if err != nil {
-		instance.Status.Phase = corev1alpha1.ApplicationAssemblerPhaseFailed
+		instance.Status.Phase = toolsv1alpha1.ApplicationAssemblerPhaseFailed
 		instance.Status.Reason = err.Error()
 	} else {
 		instance.Status.Phase = ""

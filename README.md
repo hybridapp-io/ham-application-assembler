@@ -1,10 +1,24 @@
-# HybridApplication-operator
+# Application Assembler
 
------
+[![Build](http://prow.purple-chesterfield.com/badge.svg?jobs=multiarch-image-ham-application-assembler-postsubmit)](http://prow.purple-chesterfield.com/?job=multiarch-image-ham-application-assembler-postsubmit)
+[![GoDoc](https://godoc.org/github.com/hybridapp-io/ham-application-assembler?status.svg)](https://godoc.org/github.com/hybridapp-io/ham-application-assembler)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hybridapp-io/ham-application-assembler)](https://goreportcard.com/report/github.com/hybridapp-io/ham-application-assembler)
+[![Code Coverage](https://codecov.io/gh/hybridapp-io/ham-application-assembler/branch/master/graphs/badge.svg?branch=master)](https://codecov.io/gh/hybridapp-io/ham-application-assembler?branch=master)
+[![License](https://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+[![Docker Repository on Quay](https://quay.io/repository/hybridappio/ham-application-assembler/status?token=4b2b7d63-6560-46bf-a421-bec6ddc02a0f "Docker Repository on Quay")](https://quay.io/repository/hybridappio/ham-application-assembler)
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview
 
-Hybrid Application operator, generate Application and HybridDeployables from ApplicationAssembler
+Application Assembler generates Application, Deployables and PlacementRule
 
 ## Quick Start
 
@@ -22,15 +36,16 @@ cd "$GOPATH"/src/github.com/hybridapp-io/ham-application-assembler
 - Install CRDs, Dependencies, Create Clusters and Cluster Namespaces (toronto, raleigh)
 
 ```shell
-% kubectl apply -f ./deploy/crds/app.cp4mcm.ibm.com_hybriddeployables_crd.yaml
+% kubectl apply -f ./deploy/crds
 % kubectl apply -f ./hack/test
 % kubectl apply -f ./hack/test/crs
 ```
 
 This creates a `db2` deployable CR with `deployer-type` annotation in `raleigh` namespace
 
-- Start Hybrid Application operator (in another terminal)
+- Start Application Assembler (in another terminal)
     - opertor-sdk must be installed
+
     - kubeconfig points to a kubernetes cluster with admin privliege
 
 ```shell
@@ -38,19 +53,19 @@ cd "$GOPATH"/src/github.com/hybridapp-io/ham-application-assembler
 operator-sdk run --local --namespace=""
 ```
 
-- Create ApplicationAssembler example and found Application and HybridDeployable resources are created.
+- Create ApplicationAssembler example and found Application and Deployable resources are created.
 
 ```shell
 % kubectl apply -f ./examples/simple.yaml
-applicationassembler.app.cp4mcm.ibm.com/simple created
+applicationassembler.tools.hybridapp.io/simple created
 % kubectl get hdpls
 NAME   AGE
 db2    13s
 % kubectl get hdpls -o yaml
 apiVersion: v1
 items:
-- apiVersion: app.cp4mcm.ibm.com/v1alpha1
-  kind: HybridDeployable
+- apiVersion: core.hybridapp.io/v1alpha1
+  kind: Deployable
   metadata:
     creationTimestamp: "2020-02-05T22:07:42Z"
     generation: 1
@@ -59,7 +74,7 @@ items:
     name: db2
     namespace: default
     resourceVersion: "13422517"
-    selfLink: /apis/app.cp4mcm.ibm.com/v1alpha1/namespaces/default/hybriddeployables/db2
+    selfLink: /apis/core.hybridapp.io/v1alpha1/namespaces/default/deployables/db2
     uid: ee4efc8c-4863-11ea-9dba-00000a101bb8
   spec:
     hybridtemplates:

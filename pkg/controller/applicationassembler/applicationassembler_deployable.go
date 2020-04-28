@@ -25,12 +25,12 @@ import (
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 	prulev1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
-func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(instance *corev1alpha1.ApplicationAssembler,
+func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(instance *toolsv1alpha1.ApplicationAssembler,
 	obj *corev1.ObjectReference, appID string) error {
 	var err error
 
@@ -80,7 +80,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		labels = make(map[string]string)
 	}
 
-	labels[corev1alpha1.LabelApplicationPrefix+appID] = appID
+	labels[toolsv1alpha1.LabelApplicationPrefix+appID] = appID
 	hdpl.SetLabels(labels)
 
 	htpls := []hdplv1alpha1.HybridTemplate{*newtpl}

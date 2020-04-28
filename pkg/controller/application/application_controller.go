@@ -17,7 +17,6 @@ package application
 import (
 	"context"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
@@ -39,6 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 )
 
 // Add creates a new Application Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -161,7 +162,7 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	if r.isCreateAssemblerEnabled(app) {
-		appasm := &corev1alpha1.ApplicationAssembler{}
+		appasm := &toolsv1alpha1.ApplicationAssembler{}
 		err := r.Get(context.TODO(), appKey, appasm)
 
 		if err != nil {
@@ -174,7 +175,7 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 					return reconcile.Result{}, err
 				}
 
-				err = r.updateAnnotation(app, corev1alpha1.AnnotationCreateAssembler, corev1alpha1.AssemblerCreationCompleted)
+				err = r.updateAnnotation(app, toolsv1alpha1.AnnotationCreateAssembler, toolsv1alpha1.AssemblerCreationCompleted)
 				if err != nil {
 					klog.Error("Failed to update annotation with error: ", err)
 					return reconcile.Result{}, err

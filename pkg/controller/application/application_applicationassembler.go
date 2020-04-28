@@ -17,15 +17,15 @@ package application
 import (
 	"context"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 )
 
 func (r *ReconcileApplication) createApplicationAssembler(app *sigappv1beta1.Application) error {
-
-	appasm := &corev1alpha1.ApplicationAssembler{}
+	appasm := &toolsv1alpha1.ApplicationAssembler{}
 
 	appasm.SetGroupVersionKind(applicationAssemblerGVK)
 	appasm.Name = app.GetName()

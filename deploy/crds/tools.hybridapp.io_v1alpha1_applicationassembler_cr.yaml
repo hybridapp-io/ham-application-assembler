@@ -1,4 +1,4 @@
-apiVersion: core.hybridapp.io/v1alpha1
+apiVersion: tools.hybridapp.io/v1alpha1
 kind: ApplicationAssembler
 metadata:
   name: example-applicationassembler

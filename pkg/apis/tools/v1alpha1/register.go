@@ -14,9 +14,9 @@
 
 // NOTE: Boilerplate only.  Ignore this file.
 
-// Package v1alpha1 contains API Schema definitions for the core v1alpha1 API group
+// Package v1alpha1 contains API Schema definitions for the tools v1alpha1 API group
 // +k8s:deepcopy-gen=package,register
-// +groupName=core.hybridapp.io
+// +groupName=tools.hybridapp.io
 package v1alpha1
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "core.hybridapp.io", Version: "v1alpha1"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "tools.hybridapp.io", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

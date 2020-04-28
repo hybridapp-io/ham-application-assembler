@@ -29,12 +29,12 @@ import (
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 	subv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
-func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(instance *corev1alpha1.ApplicationAssembler,
+func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(instance *toolsv1alpha1.ApplicationAssembler,
 	objref *corev1.ObjectReference, appID string) error {
 	objgvr, ok := r.gvkGVRMap[objref.GetObjectKind().GroupVersionKind()]
 	if !ok {
@@ -57,7 +57,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 		labels = make(map[string]string)
 	}
 
-	labels[corev1alpha1.LabelApplicationPrefix+appID] = appID
+	labels[toolsv1alpha1.LabelApplicationPrefix+appID] = appID
 	hdpl.SetLabels(labels)
 
 	err = r.Get(context.TODO(), key, hdpl)
@@ -154,7 +154,7 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 
 	if deployer == nil {
 		deployer = &hdplv1alpha1.Deployer{}
-		deployer.Spec.Type = corev1alpha1.DefaultDeployerType
+		deployer.Spec.Type = toolsv1alpha1.DefaultDeployerType
 		deployer.Namespace = ucobj.GetNamespace()
 	}
 

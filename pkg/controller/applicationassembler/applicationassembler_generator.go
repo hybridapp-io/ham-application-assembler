@@ -27,12 +27,12 @@ import (
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 
-	corev1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/core/v1alpha1"
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
-func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *corev1alpha1.ApplicationAssembler) (*sigappv1beta1.Application, error) {
+func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *toolsv1alpha1.ApplicationAssembler) (*sigappv1beta1.Application, error) {
 	if instance == nil {
 		return nil, nil
 	}
@@ -65,11 +65,11 @@ func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *corev1a
 	return app, nil
 }
 
-func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *corev1alpha1.ApplicationAssembler, appID string) error {
+func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *toolsv1alpha1.ApplicationAssembler, appID string) error {
 	var err error
 
 	for _, obj := range instance.Spec.Components {
-		if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == corev1alpha1.DeployableGVK {
+		if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.DeployableGVK {
 			err = r.generateHybridDeployableFromDeployable(instance, obj, appID)
 		} else {
 			err = r.generateHybridDeployableFromObject(instance, obj, appID)
@@ -105,7 +105,7 @@ func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.Deployabl
 	return r.Update(context.TODO(), metaobj.(runtime.Object))
 }
 
-func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *corev1alpha1.ApplicationAssembler,
+func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *toolsv1alpha1.ApplicationAssembler,
 	metaobj metav1.Object) string {
 	if instance == nil || metaobj == nil {
 		return ""
@@ -131,7 +131,7 @@ func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *corev1
 	return name
 }
 
-func (r *ReconcileApplicationAssembler) updateApplication(instance *corev1alpha1.ApplicationAssembler, app *sigappv1beta1.Application) (string, error) {
+func (r *ReconcileApplicationAssembler) updateApplication(instance *toolsv1alpha1.ApplicationAssembler, app *sigappv1beta1.Application) (string, error) {
 	err := controllerutil.SetControllerReference(instance, app, r.scheme)
 	if err != nil {
 		klog.Error("Failed to set controller runtime with error: ", err)
@@ -148,18 +148,18 @@ func (r *ReconcileApplicationAssembler) updateApplication(instance *corev1alpha1
 	kindincluded := false
 
 	for _, kind := range app.Spec.ComponentGroupKinds {
-		if kind == corev1alpha1.HybridDeployableGK {
+		if kind == toolsv1alpha1.HybridDeployableGK {
 			kindincluded = true
 			break
 		}
 	}
 
 	if !kindincluded {
-		app.Spec.ComponentGroupKinds = append(app.Spec.ComponentGroupKinds, corev1alpha1.HybridDeployableGK)
+		app.Spec.ComponentGroupKinds = append(app.Spec.ComponentGroupKinds, toolsv1alpha1.HybridDeployableGK)
 	}
 
 	selectorLabels := map[string]string{
-		corev1alpha1.LabelApplicationPrefix + string(app.UID): string(app.UID),
+		toolsv1alpha1.LabelApplicationPrefix + string(app.UID): string(app.UID),
 	}
 	app.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: selectorLabels,

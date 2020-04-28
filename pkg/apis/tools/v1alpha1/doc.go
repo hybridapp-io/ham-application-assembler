@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package core contains core API versions.
-//
-// This file ensures Go source parsers acknowledge the core package
-// and any child packages. It can be removed if any other Go source files are
-// added to this package.
-package core
+// Package v1alpha1 contains API Schema definitions for the tools v1alpha1 API group
+// +k8s:deepcopy-gen=package,register
+// +groupName=tools.hybridapp.io
+package v1alpha1
