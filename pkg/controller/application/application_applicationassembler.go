@@ -31,18 +31,14 @@ func (r *ReconcileApplication) createApplicationAssembler(app *sigappv1beta1.App
 	appasm.Name = app.GetName()
 	appasm.Namespace = app.GetNamespace()
 
-	// app name will sufice for now, appasm reconcile will take care of the rest
-	appasm.Spec.Application = corev1.ObjectReference{
-		Name: app.GetName(),
-	}
-
 	// add the matching deployables
 	resources, err := r.fetchApplicationComponents(app)
 	if err != nil {
 		return err
 	}
 	objectReferences := r.buildAssemblerComponents(resources)
-	appasm.Spec.Components = objectReferences
+	//TODO
+	appasm.Spec.HubComponents = objectReferences
 
 	return r.Create(context.TODO(), appasm)
 }

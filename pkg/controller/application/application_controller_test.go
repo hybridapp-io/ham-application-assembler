@@ -369,7 +369,8 @@ func TestApplicationAssembler(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
 
 	// validate the appasm components
-	g.Expect(appasm.Spec.Components).To(HaveLen(2))
+	//TODO
+	g.Expect(appasm.Spec.HubComponents).To(HaveLen(2))
 
 	components := []*corev1.ObjectReference{
 		{
@@ -386,7 +387,8 @@ func TestApplicationAssembler(t *testing.T) {
 		},
 	}
 
-	for _, comp := range appasm.Spec.Components {
+	//TODO
+	for _, comp := range appasm.Spec.HubComponents {
 		g.Expect(comp).To(BeElementOf(components))
 	}
 

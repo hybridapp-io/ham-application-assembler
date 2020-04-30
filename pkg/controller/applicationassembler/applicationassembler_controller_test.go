@@ -81,15 +81,17 @@ var (
 			Namespace: applicationAssemblerKey.Namespace,
 		},
 		Spec: toolsv1alpha1.ApplicationAssemblerSpec{
-			Application: corev1.ObjectReference{
-				Name: applicationAssemblerKey.Name,
-			},
-			Components: []*corev1.ObjectReference{
+			ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
 				{
-					APIVersion: "apps.open-cluster-management.io/v1",
-					Kind:       "Deployable",
-					Name:       deployable.Name,
-					Namespace:  deployable.Namespace,
+					Cluster: deployable.Namespace,
+					Components: []*corev1.ObjectReference{
+						{
+							APIVersion: "apps.open-cluster-management.io/v1",
+							Kind:       "Deployable",
+							Name:       deployable.Name,
+							Namespace:  deployable.Namespace,
+						},
+					},
 				},
 			},
 		},
@@ -372,14 +374,12 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	g.Expect(c.Create(context.TODO(), dset)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), dset)
 
+	//TODO
 	barApplicationAssembler.Spec = toolsv1alpha1.ApplicationAssemblerSpec{
-		Application: corev1.ObjectReference{
-			Name: barApplicationAssemblerKey.Name,
-		},
-		Components: []*corev1.ObjectReference{
+		HubComponents: []*corev1.ObjectReference{
 			{
-				APIVersion: "app.cp4mcm.ibm.com/v1alpha1",
-				Kind:       "HybridDeployable",
+				APIVersion: "core.hybridapp.io/v1alpha1",
+				Kind:       "Deployable",
 				Name:       hybrddplybl.GetName(),
 				Namespace:  hybrddplybl.GetNamespace(),
 			},

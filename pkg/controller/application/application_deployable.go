@@ -134,7 +134,7 @@ func (r *ReconcileApplication) reconcileAppDeployable(app *sigappv1beta1.Applica
 
 	tplApp := app.DeepCopy()
 	r.prepareDeployable(dpl, tplApp)
-	r.prepareTemplate(tplApp, namespace)
+	r.prepareTemplate(tplApp, app.Namespace)
 
 	dpl.Spec.Template = &runtime.RawExtension{
 		Object: tplApp,

@@ -1,11 +1,12 @@
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ham-application-assembler
 subjects:
 - kind: ServiceAccount
   name: ham-application-assembler
+  namespace: ham
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: ham-application-assembler
   apiGroup: rbac.authorization.k8s.io

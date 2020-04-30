@@ -16,6 +16,7 @@ package applicationassembler
 
 import (
 	"context"
+	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -105,6 +106,56 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	return err
+}
+
+func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInManagedCluster(instance *toolsv1alpha1.ApplicationAssembler,
+	objref *corev1.ObjectReference, appID string, cluster types.NamespacedName) error {
+
+	// create a deployables.apps.open-cluster-management.io in the managed cluster namespace
+	dplList := &dplv1.DeployableList{}
+	err := r.List(context.TODO(), dplList, &client.ListOptions{Namespace: cluster.Namespace})
+	if err != nil {
+		klog.Error("Failed to retrieve the list of deployables for cluster ", cluster.String)
+		return err
+	}
+	var dpl *dplv1.Deployable
+	for _, existingDpl := range dplList.Items {
+		dplTemplate := &unstructured.Unstructured{}
+		err = json.Unmarshal(existingDpl.Spec.Template.Raw, dplTemplate)
+		if err != nil {
+			klog.Error("Failed to unmarshal object.")
+			return err
+		}
+
+		if dplTemplate.GetKind() == objref.Kind && dplTemplate.GetAPIVersion() == objref.APIVersion && dplTemplate.GetName() == objref.Name && dplTemplate.GetNamespace() == objref.Namespace {
+			dpl = existingDpl.DeepCopy()
+			break
+		}
+	}
+	if dpl == nil {
+		dpl = &dplv1.Deployable{}
+		dpl.Name = objref.Name
+		dpl.Namespace = cluster.Namespace
+		annotations := make(map[string]string)
+		annotations[toolsv1alpha1.AnnotationDiscover] = toolsv1alpha1.DiscoveryEnabled
+		dpl.Annotations = annotations
+		dpl.Spec.Template = &runtime.RawExtension{
+			Object: objref,
+		}
+		err = r.Client.Create(context.TODO(), dpl)
+		if err != nil {
+			klog.Error("Failed to create deployable ", cluster.Namespace+"/"+objref.Name)
+			return err
+		}
+	}
+
+	dplObj := &corev1.ObjectReference{
+		Name:       dpl.Name,
+		Namespace:  dpl.Namespace,
+		Kind:       dpl.Kind,
+		APIVersion: dpl.APIVersion,
+	}
+	return r.generateHybridDeployableFromDeployable(instance, dplObj, appID)
 }
 
 // Assuming only 1 deployer in 1 namespace

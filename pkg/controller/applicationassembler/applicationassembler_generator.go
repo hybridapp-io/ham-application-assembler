@@ -16,6 +16,7 @@ package applicationassembler
 
 import (
 	"context"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +40,7 @@ func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *toolsv1
 
 	var app = &sigappv1beta1.Application{}
 
-	appkey := types.NamespacedName{Name: instance.Spec.Application.Name, Namespace: instance.Spec.Application.Namespace}
+	appkey := types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}
 	if appkey.Namespace == "" {
 		appkey.Namespace = instance.Namespace
 	}
@@ -50,12 +51,12 @@ func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *toolsv1
 			klog.Error("Failed to get applications for assembler with error:", err)
 			return nil, err
 		}
-		appns := instance.Spec.Application.Namespace
+		appns := instance.Namespace
 		if appns == "" {
 			appns = instance.Namespace
 		}
 
-		app.Name = instance.Spec.Application.Name
+		app.Name = instance.Name
 		app.Namespace = appns
 
 	}
@@ -68,14 +69,37 @@ func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *toolsv1
 func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *toolsv1alpha1.ApplicationAssembler, appID string) error {
 	var err error
 
-	for _, obj := range instance.Spec.Components {
-		if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.DeployableGVK {
-			err = r.generateHybridDeployableFromDeployable(instance, obj, appID)
-		} else {
-			err = r.generateHybridDeployableFromObject(instance, obj, appID)
-		}
+	for _, obj := range instance.Spec.HubComponents {
+		err = r.generateHybridDeployableFromObject(instance, obj, appID)
 		if err != nil {
 			return err
+		}
+	}
+
+	for _, managedCluster := range instance.Spec.ManagedClustersComponents {
+		cluster := managedCluster.Cluster
+		var clusterKey types.NamespacedName
+		if len(strings.Split(cluster, "/")) > 1 {
+			clusterKey = types.NamespacedName{
+				Namespace: strings.Split(cluster, "/")[0],
+				Name:      strings.Split(cluster, "/")[1],
+			}
+		} else {
+			// no namespace, use cluster name as namespace
+			clusterKey = types.NamespacedName{
+				Namespace: strings.Split(cluster, "/")[0],
+				Name:      strings.Split(cluster, "/")[0],
+			}
+		}
+		for _, obj := range managedCluster.Components {
+			if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.DeployableGVK {
+				err = r.generateHybridDeployableFromDeployable(instance, obj, appID)
+			} else {
+				err = r.generateHybridDeployableFromObjectInManagedCluster(instance, obj, appID, clusterKey)
+			}
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -111,7 +135,7 @@ func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *toolsv
 		return ""
 	}
 
-	name := instance.Spec.Application.Name + "-"
+	name := instance.Name + "-"
 	if metaobj.GetGenerateName() != "" {
 		name += metaobj.GetGenerateName()
 	} else {

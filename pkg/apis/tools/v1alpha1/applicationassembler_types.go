@@ -35,8 +35,8 @@ var (
 
 	//HybridDeployableGK represents the GroupVersionKind structure for a hybrid deployable
 	HybridDeployableGK = metav1.GroupKind{
-		Group: "app.cp4mcm.ibm.com",
-		Kind:  "HybridDeployable",
+		Group: "core.hybridapp.io",
+		Kind:  "Deployable",
 	}
 
 	//DeployableGVK represents the GroupVersionKind structure for a deployable
@@ -60,12 +60,20 @@ const (
 	AssemblerCreationCompleted = "completed"
 )
 
+// ClusterComponent defines a list of components for a managed cluster identified by its namespace
+type ClusterComponent struct {
+	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
+	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	Cluster    string                    `json:"cluster"`
+	Components []*corev1.ObjectReference `json:"components,omitempty"`
+}
+
 // ApplicationAssemblerSpec defines the desired state of ApplicationAssembler
 type ApplicationAssemblerSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Application corev1.ObjectReference    `json:"applicationObject"`
-	Components  []*corev1.ObjectReference `json:"components,omitempty"`
+	HubComponents             []*corev1.ObjectReference `json:"hubComponents,omitempty"`
+	ManagedClustersComponents []*ClusterComponent       `json:"managedClustersComponents,omitempty"`
 }
 
 // ApplicationAssemblerPhase defines the application assembler phase

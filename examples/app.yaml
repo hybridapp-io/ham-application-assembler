@@ -6,8 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: "wordpress-01"
   annotations:
-    app.cp4mcm.ibm.com/hybrid-discover: "enabled"
-    #app.cp4mcm.ibm.com/hybrid-discover-create-assembler: "enabled"
+    tools.hybridapp.io/hybrid-discover: "enabled"
+    #tools.hybridapp.io/hybrid-discover-create-assembler: "enabled"
 spec:
   selector:
     matchLabels:
@@ -18,31 +18,3 @@ spec:
     - group: apps
       kind: StatefulSet
   addOwnerRef: false
-  descriptor:
-    type: "wordpress"
-    keywords:
-      - "cms"
-      - "blog"
-      - "wordpress"
-    links:
-      - description: About
-        url: "https://wordpress.org/"
-      - description: Web Server Dashboard
-        url: "https://metrics/internal/wordpress-01/web-app"
-      - description: Mysql Dashboard
-        url: "https://metrics/internal/wordpress-01/mysql"
-    version: "4.9.4"
-    description: "WordPress is open source software you can use to create a beautiful website, blog, or app."
-    icons:
-      - src: "https://s.w.org/style/images/about/WordPress-logotype-wmark.png"
-        type: "image/png"
-        size: "1000x1000"
-      - src: "https://s.w.org/style/images/about/WordPress-logotype-standard.png"
-        type: "image/png"
-        size: "2000x680"
-    maintainers:
-      - name: Wordpress Dev
-        email: dev@wordpress.org
-    owners:
-      - name: Wordpress Admin
-        email: admin@wordpress.org
