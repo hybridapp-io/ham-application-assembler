@@ -17,6 +17,7 @@ package applicationassembler
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -113,6 +114,8 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 
 	// create a deployables.apps.open-cluster-management.io in the managed cluster namespace
 	dplList := &dplv1.DeployableList{}
+
+	// do not search based on name. Naming conventions are only relevant within the operator code
 	err := r.List(context.TODO(), dplList, &client.ListOptions{Namespace: cluster.Namespace})
 	if err != nil {
 		klog.Error("Failed to retrieve the list of deployables for cluster ", cluster.String)
@@ -126,7 +129,6 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 			klog.Error("Failed to unmarshal object.")
 			return err
 		}
-
 		if dplTemplate.GetKind() == objref.Kind && dplTemplate.GetAPIVersion() == objref.APIVersion && dplTemplate.GetName() == objref.Name && dplTemplate.GetNamespace() == objref.Namespace {
 			dpl = existingDpl.DeepCopy()
 			break
@@ -134,13 +136,20 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 	}
 	if dpl == nil {
 		dpl = &dplv1.Deployable{}
-		dpl.Name = objref.Name
+		// don't generate deployable name, but append the user namespace so we're consistent with the discovery flow
+		dpl.Name = strings.ToLower(objref.Kind + "-" + objref.Namespace + "-" + objref.Name)
 		dpl.Namespace = cluster.Namespace
 		annotations := make(map[string]string)
 		annotations[toolsv1alpha1.AnnotationDiscover] = toolsv1alpha1.DiscoveryEnabled
 		dpl.Annotations = annotations
+
+		tpl := &unstructured.Unstructured{}
+		tpl.SetAPIVersion(objref.APIVersion)
+		tpl.SetKind(objref.Kind)
+		tpl.SetName(objref.Name)
+		tpl.SetNamespace(objref.Namespace)
 		dpl.Spec.Template = &runtime.RawExtension{
-			Object: objref,
+			Object: tpl,
 		}
 		err = r.Client.Create(context.TODO(), dpl)
 		if err != nil {
@@ -156,6 +165,67 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		APIVersion: dpl.APIVersion,
 	}
 	return r.generateHybridDeployableFromDeployable(instance, dplObj, appID)
+
+	// ucobj := &unstructured.Unstructured{}
+	// ucobj.SetAPIVersion(objref.APIVersion)
+	// ucobj.SetKind(objref.Kind)
+	// ucobj.SetName(objref.Name)
+	// ucobj.SetNamespace(objref.Namespace)
+
+	// var key types.NamespacedName
+	// key.Name = strings.ToLower(objref.Kind + "-" + objref.Namespace + "-" + objref.Name)
+	// key.Namespace = instance.Namespace
+	// hdpl := &hdplv1alpha1.Deployable{}
+
+	// labels := hdpl.GetLabels()
+	// if labels == nil {
+	// 	labels = make(map[string]string)
+	// }
+
+	// labels[toolsv1alpha1.LabelApplicationPrefix+appID] = appID
+	// hdpl.SetLabels(labels)
+
+	// err := r.Get(context.TODO(), key, hdpl)
+	// if err != nil {
+	// 	if !errors.IsNotFound(err) {
+	// 		klog.Error("Failed to work with api server for hybrid deployable with error:", err)
+	// 		return err
+	// 	}
+
+	// 	hdpl.Name = key.Name
+	// 	hdpl.Namespace = key.Namespace
+	// }
+
+	// newtpl, _, err := r.generateHybridTemplateFromObject(ucobj)
+	// if err != nil {
+	// 	klog.Error("Failed to generate hybrid template from object with error:", err)
+	// 	return err
+	// }
+
+	// htpls := []hdplv1alpha1.HybridTemplate{*newtpl}
+
+	// for _, htpl := range hdpl.Spec.HybridTemplates {
+	// 	if htpl.DeployerType != newtpl.DeployerType {
+	// 		htpls = append(htpls, *(htpl.DeepCopy()))
+	// 	}
+	// }
+
+	// hdpl.Spec.HybridTemplates = htpls
+
+	// err = r.genPlacementRuleForHybridDeployable(hdpl, cluster.Namespace)
+	// if err != nil {
+	// 	klog.Error("Failed to generate placementrule for hybrid deployable with error:", err)
+	// 	return err
+	// }
+
+	// if hdpl.UID != "" {
+	// 	err = r.Update(context.TODO(), hdpl)
+	// } else {
+	// 	err = r.Create(context.TODO(), hdpl)
+	// }
+
+	// return err
+
 }
 
 // Assuming only 1 deployer in 1 namespace

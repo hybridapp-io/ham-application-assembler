@@ -98,7 +98,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		klog.Error("Failed to patch object with error: ", err)
 	}
 
-	err = r.genPlacementRuleForHybridDeployable(hdpl, dpl)
+	err = r.genPlacementRuleForHybridDeployable(hdpl, dpl.Namespace)
 	if err != nil {
 		klog.Error("Failed to generate placementrule for hybrid deployable with error:", err)
 		return err
@@ -113,7 +113,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 	return err
 }
 
-func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1alpha1.Deployable, dpl *dplv1.Deployable) error {
+func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1alpha1.Deployable, clusterNamespace string) error {
 	prule := &prulev1.PlacementRule{}
 	key := types.NamespacedName{Namespace: hdpl.Namespace, Name: hdpl.Name}
 
@@ -129,7 +129,7 @@ func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl
 	}
 
 	objcluster := prulev1.GenericClusterReference{
-		Name: dpl.Namespace,
+		Name: clusterNamespace,
 	}
 
 	prule.Spec.Clusters = []prulev1.GenericClusterReference{
@@ -137,8 +137,8 @@ func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl
 	}
 
 	objdecision := prulev1.PlacementDecision{
-		ClusterName:      dpl.Namespace,
-		ClusterNamespace: dpl.Namespace,
+		ClusterName:      clusterNamespace,
+		ClusterNamespace: clusterNamespace,
 	}
 	prule.Status.Decisions = []prulev1.PlacementDecision{
 		objdecision,

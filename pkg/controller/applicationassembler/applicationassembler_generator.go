@@ -59,9 +59,15 @@ func (r *ReconcileApplicationAssembler) getOrCreateApplication(instance *toolsv1
 		app.Name = instance.Name
 		app.Namespace = appns
 
+		// create the app. We need the UID for label selector
+		err = r.Create(context.TODO(), app)
+		if err != nil {
+			klog.Error("Failed to create application ", app.Namespace+"/"+app.Name)
+			return nil, err
+		}
+	} else {
+		klog.V(packageDetailLogLevel).Info("found existing application", app)
 	}
-
-	klog.V(packageDetailLogLevel).Info("found existing application", app)
 
 	return app, nil
 }
@@ -135,7 +141,8 @@ func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *toolsv
 		return ""
 	}
 
-	name := instance.Name + "-"
+	// do not use the appasm name in the hdpl name, as the app ID label selector will be added to the hdpl
+	name := ""
 	if metaobj.GetGenerateName() != "" {
 		name += metaobj.GetGenerateName()
 	} else {

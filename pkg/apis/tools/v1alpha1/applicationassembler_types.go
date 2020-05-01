@@ -22,16 +22,16 @@ import (
 
 var (
 	// AnnotationDiscover defines the annotation used to indicate whether an application should be marked for discovery
-	AnnotationDiscover = SchemeGroupVersion.Group + "/hybrid-discover"
+	AnnotationDiscover = "core.hybridapp.io/hybrid-discovered"
+
+	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
+	AnnotationClusterScope = "core.hybridapp.io/hybrid-discover-clusterscoped"
 
 	// AnnotationCreateAssembler defines the annotation used to indicate whether the discovery process should also create an application assembler CR.
 	AnnotationCreateAssembler = SchemeGroupVersion.Group + "/hybrid-discover-create-assembler"
 
 	// LabelApplicationPrefix defines the label prefix used as component selector
 	LabelApplicationPrefix = SchemeGroupVersion.Group + "/application-"
-
-	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
-	AnnotationClusterScope = SchemeGroupVersion.Group + "/hybrid-discover-clusterscoped"
 
 	//HybridDeployableGK represents the GroupVersionKind structure for a hybrid deployable
 	HybridDeployableGK = metav1.GroupKind{
@@ -54,7 +54,7 @@ const (
 	DefaultDeployerType = "kubernetes"
 
 	// DiscoveryEnabled indicates whether the discovery is enabled for an application CR
-	DiscoveryEnabled = "enabled"
+	DiscoveryEnabled = "true"
 
 	//AssemblerCreationCompleted indicates the process of creating the assembler CR has finished successfully
 	AssemblerCreationCompleted = "completed"
