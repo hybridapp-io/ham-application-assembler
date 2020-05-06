@@ -21,16 +21,18 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 
@@ -175,12 +177,12 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 	g.Expect(c.Get(context.TODO(), appKey, app)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), app)
 
-	hybrddplyblKey := types.NamespacedName{Name: applicationAssemblerKey.Name + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplyblKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), hybrddplybl)
 
-	pruleKey := types.NamespacedName{Name: applicationAssemblerKey.Name + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	pruleKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
 	prule := &prulev1.PlacementRule{}
 	g.Expect(c.Get(context.TODO(), pruleKey, prule)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), prule)
@@ -247,10 +249,9 @@ func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployable
 	g.Expect(c.Get(context.TODO(), appKey, app)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), app)
 
-	hybrddplyblKey := types.NamespacedName{Name: applicationAssemblerKey.Name + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplyblKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
-
 }
 
 func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDeployableCreated(t *testing.T) {
@@ -362,7 +363,7 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	defer c.Delete(context.TODO(), fooInstance)
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	hybrddplyblKey := types.NamespacedName{Name: applicationAssemblerKey.Name + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplyblKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 
@@ -374,7 +375,6 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	g.Expect(c.Create(context.TODO(), dset)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), dset)
 
-	//TODO
 	barApplicationAssembler.Spec = toolsv1alpha1.ApplicationAssemblerSpec{
 		HubComponents: []*corev1.ObjectReference{
 			{
@@ -397,4 +397,177 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	barApp := &sigappv1beta1.Application{}
 	g.Expect(c.Get(context.TODO(), barAppKey, barApp)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), barApp)
+}
+
+func TestCreateDeployables(t *testing.T) {
+	g := NewWithT(t)
+
+	var (
+		mcName        = "mc"
+		mcServiceName = "mysql-svc-mc"
+
+		mc = &clusterv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      mcName,
+				Namespace: mcName,
+			},
+		}
+
+		mcService = corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Service",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      mcServiceName,
+				Namespace: "default",
+			},
+		}
+
+		applicationAssemblerKey = types.NamespacedName{
+			Name:      "foo-app",
+			Namespace: "default",
+		}
+
+		applicationAssembler = &toolsv1alpha1.ApplicationAssembler{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      applicationAssemblerKey.Name,
+				Namespace: applicationAssemblerKey.Namespace,
+			},
+			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
+				ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
+					{
+						Cluster: mc.Namespace + "/" + mc.Name,
+						Components: []*corev1.ObjectReference{
+							{
+								APIVersion: mcService.APIVersion,
+								Kind:       mcService.Kind,
+								Name:       mcService.Name,
+								Namespace:  mcService.Namespace,
+							},
+						},
+					},
+				},
+			},
+		}
+	)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance := applicationAssembler.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance)
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	hybrddplyblKey := types.NamespacedName{Name: "service-" + mcService.Namespace + "-" + mcService.Name, Namespace: applicationAssemblerKey.Namespace}
+
+	nameLabel := map[string]string{
+		hdplv1alpha1.HostingHybridDeployable: hybrddplyblKey.Name,
+	}
+	dplList := &dplv1.DeployableList{}
+	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(nameLabel))})).NotTo(HaveOccurred())
+	g.Expect(dplList.Items).To(HaveLen(1))
+}
+
+func TestHubComponents(t *testing.T) {
+	g := NewWithT(t)
+
+	var (
+		serviceName = "mysql-svc-mc"
+
+		service = corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Service",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      serviceName,
+				Namespace: "default",
+			},
+			Spec: v1.ServiceSpec{
+				Ports: []v1.ServicePort{
+					{
+						Port: 3306,
+					},
+				},
+			},
+		}
+
+		applicationAssemblerKey = types.NamespacedName{
+			Name:      "foo-app",
+			Namespace: "default",
+		}
+
+		applicationAssembler = &toolsv1alpha1.ApplicationAssembler{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      applicationAssemblerKey.Name,
+				Namespace: applicationAssemblerKey.Namespace,
+			},
+			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
+				HubComponents: []*corev1.ObjectReference{
+					{
+						APIVersion: service.APIVersion,
+						Kind:       service.Kind,
+						Name:       service.Name,
+						Namespace:  service.Namespace,
+					},
+				},
+			},
+		}
+	)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	svc := service.DeepCopy()
+	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svc)
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance := applicationAssembler.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance)
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	hybrddplyblKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplybl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 }

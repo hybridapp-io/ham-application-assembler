@@ -3,21 +3,21 @@ module github.com/hybridapp-io/ham-application-assembler
 go 1.13
 
 require (
-	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200428132152-ddeef5e522f2
+	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200505205435-a05bd8b63da8
 	github.com/kubernetes-sigs/application v0.8.1
 	github.com/onsi/gomega v1.9.0
 	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200409001040-158722845851
 	github.com/open-cluster-management/multicloud-operators-placementrule v0.0.0-20200409002246-5a52c406aebc
 	github.com/open-cluster-management/multicloud-operators-subscription v0.0.0-20200427133526-eb3986b41290
-	github.com/operator-framework/operator-sdk v0.16.0
+	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/prometheus/common v0.9.1
 	github.com/spf13/pflag v1.0.5
-	k8s.io/api v0.17.2
-	k8s.io/apimachinery v0.17.2
+	k8s.io/api v0.17.4
+	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/cluster-registry v0.0.6
 	k8s.io/klog v1.0.0
-	sigs.k8s.io/controller-runtime v0.4.0
+	sigs.k8s.io/controller-runtime v0.5.2
 )
 
 // Pinned to kubernetes-1.16.2

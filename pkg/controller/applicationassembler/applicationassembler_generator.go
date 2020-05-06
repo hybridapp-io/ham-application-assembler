@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,7 +77,11 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *tool
 	var err error
 
 	for _, obj := range instance.Spec.HubComponents {
-		err = r.generateHybridDeployableFromObject(instance, obj, appID)
+		if err = r.generateHybridDeployableFromObject(instance, obj, appID); err != nil {
+			klog.Error("Failed to generate hybrid deployable from object in lcoal cluster for ", obj.Namespace+"/"+obj.Name)
+			return err
+
+		}
 		if err != nil {
 			return err
 		}
@@ -99,12 +104,16 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *tool
 		}
 		for _, obj := range managedCluster.Components {
 			if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.DeployableGVK {
-				err = r.generateHybridDeployableFromDeployable(instance, obj, appID)
+				if err = r.generateHybridDeployableFromDeployable(instance, obj, appID); err != nil {
+					klog.Error("Failed to generate hybrid deployable from deployable for ", obj.Namespace+"/"+obj.Name)
+					return err
+				}
+
 			} else {
-				err = r.generateHybridDeployableFromObjectInManagedCluster(instance, obj, appID, clusterKey)
-			}
-			if err != nil {
-				return err
+				if err = r.generateHybridDeployableFromObjectInManagedCluster(instance, obj, appID, clusterKey); err != nil {
+					klog.Error("Failed to generate hybrid deployable from object in managed cluster for ", obj.Namespace+"/"+obj.Name)
+					return err
+				}
 			}
 		}
 	}
@@ -112,7 +121,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *tool
 	return nil
 }
 
-func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.Deployable, metaobj metav1.Object) error {
+func (r *ReconcileApplicationAssembler) updateObject(hdpl *hdplv1alpha1.Deployable, metaobj metav1.Object) {
 	annotations := metaobj.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
@@ -129,37 +138,20 @@ func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.Deployabl
 	labels[hdplv1alpha1.ControlledBy] = hdplv1alpha1.HybridDeployableController
 	labels[hdplv1alpha1.HostingHybridDeployable] = hdpl.GetName()
 	metaobj.SetLabels(labels)
+}
 
-	metaobj.SetGenerateName("")
-
+func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.Deployable, metaobj metav1.Object) error {
+	r.updateObject(hdpl, metaobj)
 	return r.Update(context.TODO(), metaobj.(runtime.Object))
 }
 
 func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *toolsv1alpha1.ApplicationAssembler,
-	metaobj metav1.Object) string {
+	metaobj *corev1.ObjectReference) string {
 	if instance == nil || metaobj == nil {
 		return ""
 	}
 
-	// do not use the appasm name in the hdpl name, as the app ID label selector will be added to the hdpl
-	name := ""
-	if metaobj.GetGenerateName() != "" {
-		name += metaobj.GetGenerateName()
-	} else {
-		labels := metaobj.GetLabels()
-		if _, ok := labels[hdplv1alpha1.HostingHybridDeployable]; ok && labels[hdplv1alpha1.HostingHybridDeployable] != "" {
-			// if the object belongs to a hybriddeployable already, use same name
-			name = labels[hdplv1alpha1.HostingHybridDeployable]
-		} else {
-			name += metaobj.GetName()
-		}
-	}
-
-	if len(name) > 1 && name[len(name)-1] == '-' {
-		name = name[:len(name)-1]
-	}
-
-	return name
+	return strings.ToLower(metaobj.Kind + "-" + metaobj.Namespace + "-" + metaobj.Name)
 }
 
 func (r *ReconcileApplicationAssembler) updateApplication(instance *toolsv1alpha1.ApplicationAssembler, app *sigappv1beta1.Application) (string, error) {

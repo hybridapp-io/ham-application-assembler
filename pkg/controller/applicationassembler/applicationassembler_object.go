@@ -16,7 +16,6 @@ package applicationassembler
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -50,7 +49,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	var key types.NamespacedName
-	key.Name = r.genHybridDeployableName(instance, ucobj)
+	key.Name = r.genHybridDeployableName(instance, objref)
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}
 
@@ -110,125 +109,50 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 }
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInManagedCluster(instance *toolsv1alpha1.ApplicationAssembler,
-	objref *corev1.ObjectReference, appID string, cluster types.NamespacedName) error {
+	obj *corev1.ObjectReference, appID string, cluster types.NamespacedName) error {
 
-	// create a deployables.apps.open-cluster-management.io in the managed cluster namespace
-	dplList := &dplv1.DeployableList{}
-
-	// do not search based on name. Naming conventions are only relevant within the operator code
-	err := r.List(context.TODO(), dplList, &client.ListOptions{Namespace: cluster.Namespace})
-	if err != nil {
-		klog.Error("Failed to retrieve the list of deployables for cluster ", cluster.String)
-		return err
+	hdplKey := types.NamespacedName{
+		Name:      r.genHybridDeployableName(instance, obj),
+		Namespace: instance.Namespace,
 	}
-	var dpl *dplv1.Deployable
-	for _, existingDpl := range dplList.Items {
-		dplTemplate := &unstructured.Unstructured{}
-		err = json.Unmarshal(existingDpl.Spec.Template.Raw, dplTemplate)
-		if err != nil {
-			klog.Error("Failed to unmarshal object.")
+	hdpl := &hdplv1alpha1.Deployable{}
+
+	err := r.Get(context.TODO(), hdplKey, hdpl)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			klog.Error("Failed to retrieve hybrid deployable ", hdplKey.String())
 			return err
 		}
-		if dplTemplate.GetKind() == objref.Kind && dplTemplate.GetAPIVersion() == objref.APIVersion && dplTemplate.GetName() == objref.Name && dplTemplate.GetNamespace() == objref.Namespace {
-			dpl = existingDpl.DeepCopy()
-			break
-		}
-	}
-	if dpl == nil {
-		dpl = &dplv1.Deployable{}
-		// don't generate deployable name, but append the user namespace so we're consistent with the discovery flow
-		dpl.Name = strings.ToLower(objref.Kind + "-" + objref.Namespace + "-" + objref.Name)
+		hdpl.Name = hdplKey.Name
+		hdpl.Namespace = hdplKey.Namespace
+
+		dpl := &dplv1.Deployable{}
+		dpl.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
 		dpl.Namespace = cluster.Namespace
 		annotations := make(map[string]string)
 		annotations[toolsv1alpha1.AnnotationDiscover] = toolsv1alpha1.DiscoveryEnabled
 		dpl.Annotations = annotations
 
 		tpl := &unstructured.Unstructured{}
-		tpl.SetAPIVersion(objref.APIVersion)
-		tpl.SetKind(objref.Kind)
-		tpl.SetName(objref.Name)
-		tpl.SetNamespace(objref.Namespace)
+		tpl.SetAPIVersion(obj.APIVersion)
+		tpl.SetKind(obj.Kind)
+		tpl.SetName(obj.Name)
+		tpl.SetNamespace(obj.Namespace)
 		dpl.Spec.Template = &runtime.RawExtension{
 			Object: tpl,
 		}
-		err = r.Client.Create(context.TODO(), dpl)
+		r.updateObject(hdpl, dpl)
+		err := r.Client.Create(context.TODO(), dpl)
 		if err != nil {
-			klog.Error("Failed to create deployable ", cluster.Namespace+"/"+objref.Name)
+			klog.Error("Failed to create deployable ", cluster.Namespace+"/"+obj.Name)
 			return err
 		}
+
+		return r.buildHybridDeployable(hdpl, dpl, appID)
 	}
-
-	dplObj := &corev1.ObjectReference{
-		Name:       dpl.Name,
-		Namespace:  dpl.Namespace,
-		Kind:       dpl.Kind,
-		APIVersion: dpl.APIVersion,
-	}
-	return r.generateHybridDeployableFromDeployable(instance, dplObj, appID)
-
-	// ucobj := &unstructured.Unstructured{}
-	// ucobj.SetAPIVersion(objref.APIVersion)
-	// ucobj.SetKind(objref.Kind)
-	// ucobj.SetName(objref.Name)
-	// ucobj.SetNamespace(objref.Namespace)
-
-	// var key types.NamespacedName
-	// key.Name = strings.ToLower(objref.Kind + "-" + objref.Namespace + "-" + objref.Name)
-	// key.Namespace = instance.Namespace
-	// hdpl := &hdplv1alpha1.Deployable{}
-
-	// labels := hdpl.GetLabels()
-	// if labels == nil {
-	// 	labels = make(map[string]string)
-	// }
-
-	// labels[toolsv1alpha1.LabelApplicationPrefix+appID] = appID
-	// hdpl.SetLabels(labels)
-
-	// err := r.Get(context.TODO(), key, hdpl)
-	// if err != nil {
-	// 	if !errors.IsNotFound(err) {
-	// 		klog.Error("Failed to work with api server for hybrid deployable with error:", err)
-	// 		return err
-	// 	}
-
-	// 	hdpl.Name = key.Name
-	// 	hdpl.Namespace = key.Namespace
-	// }
-
-	// newtpl, _, err := r.generateHybridTemplateFromObject(ucobj)
-	// if err != nil {
-	// 	klog.Error("Failed to generate hybrid template from object with error:", err)
-	// 	return err
-	// }
-
-	// htpls := []hdplv1alpha1.HybridTemplate{*newtpl}
-
-	// for _, htpl := range hdpl.Spec.HybridTemplates {
-	// 	if htpl.DeployerType != newtpl.DeployerType {
-	// 		htpls = append(htpls, *(htpl.DeepCopy()))
-	// 	}
-	// }
-
-	// hdpl.Spec.HybridTemplates = htpls
-
-	// err = r.genPlacementRuleForHybridDeployable(hdpl, cluster.Namespace)
-	// if err != nil {
-	// 	klog.Error("Failed to generate placementrule for hybrid deployable with error:", err)
-	// 	return err
-	// }
-
-	// if hdpl.UID != "" {
-	// 	err = r.Update(context.TODO(), hdpl)
-	// } else {
-	// 	err = r.Create(context.TODO(), hdpl)
-	// }
-
-	// return err
-
+	return nil
 }
 
-// Assuming only 1 deployer in 1 namespace
 func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1alpha1.HybridTemplate,
 	*hdplv1alpha1.Deployer, error) {
 	var err error
@@ -298,13 +222,11 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 var (
 	obsoleteAnnotations = []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
-		hdplv1alpha1.HostingHybridDeployable,
 		dplv1.AnnotationHosting,
 		subv1.AnnotationHosting,
 		subv1.AnnotationSyncSource,
 	}
 	obsoleteLabels = []string{
-		hdplv1alpha1.HostingHybridDeployable,
 		hdplv1alpha1.ControlledBy,
 	}
 )
