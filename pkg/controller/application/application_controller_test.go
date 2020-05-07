@@ -321,7 +321,7 @@ func TestDiscoveredComponents(t *testing.T) {
 	}
 }
 
-func TestApplicationAssembler(t *testing.T) {
+func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T) {
 	g := NewWithT(t)
 
 	var c client.Client
@@ -348,13 +348,22 @@ func TestApplicationAssembler(t *testing.T) {
 	}()
 
 	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+
+	cl1 := mc1.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), cl1)
+
+	cl2 := mc2.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl2)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), cl2)
+
 	dpl1 := mc1ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), dpl1)
 
 	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), dpl2)
+	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), dpl2)
 
 	// Create the Application object and expect the hybrid deployables in its status
 	app := application.DeepCopy()
@@ -367,9 +376,10 @@ func TestApplicationAssembler(t *testing.T) {
 
 	appasm := &toolsv1alpha1.ApplicationAssembler{}
 	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), appasm)
 
-	// validate the appasm components
-	g.Expect(appasm.Spec.HubComponents).To(HaveLen(2))
+	// validate the appasm components , 2 cluster components
+	g.Expect(appasm.Spec.ManagedClustersComponents).To(HaveLen(2))
 
 	components := []*corev1.ObjectReference{
 		{
@@ -385,11 +395,89 @@ func TestApplicationAssembler(t *testing.T) {
 			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
 		},
 	}
-	for _, comp := range appasm.Spec.HubComponents {
-		g.Expect(comp).To(BeElementOf(components))
+	for _, comp := range appasm.Spec.ManagedClustersComponents {
+		g.Expect(comp.Components[0]).To(BeElementOf(components))
 	}
 
 	// validate the hybrid-discover-create-assembler annotation
 	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
 	g.Expect(app.Annotations[toolsv1alpha1.AnnotationCreateAssembler]).To(Equal(toolsv1alpha1.AssemblerCreationCompleted))
+}
+
+func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	appReconciler := newReconciler(mgr)
+	appRecFn, appRequests := SetupTestReconcile(appReconciler)
+
+	g.Expect(add(mgr, appRecFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+
+	cl1 := mc1.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), cl1)
+
+	dpl1 := mc1ServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), dpl1)
+
+	dpl2 := mc2ServiceDeployable.DeepCopy()
+	dpl2.Namespace = mc1Name
+	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), dpl2)
+
+	// Create the Application object and expect the hybrid deployables in its status
+	app := application.DeepCopy()
+	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.DiscoveryEnabled
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), app)
+
+	// wait for reconcile to finish
+	g.Eventually(appRequests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	appasm := &toolsv1alpha1.ApplicationAssembler{}
+	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), appasm)
+
+	// validate the appasm components , 1 cluster components
+	g.Expect(appasm.Spec.ManagedClustersComponents).To(HaveLen(1))
+	// 2 components in the first cluster component
+	g.Expect(appasm.Spec.ManagedClustersComponents[0].Components).To(HaveLen(2))
+
+	components := []*corev1.ObjectReference{
+		{
+			Namespace:  dpl1.Namespace,
+			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Name:       dpl1.Name,
+			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+		},
+		{
+			Namespace:  dpl1.Namespace,
+			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Name:       dpl2.Name,
+			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+		},
+	}
+	for _, comp := range appasm.Spec.ManagedClustersComponents[0].Components {
+		g.Expect(comp).To(BeElementOf(components))
+	}
 }

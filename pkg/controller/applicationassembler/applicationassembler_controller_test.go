@@ -177,12 +177,12 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 	g.Expect(c.Get(context.TODO(), appKey, app)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), app)
 
-	hybrddplyblKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplyblKey := types.NamespacedName{Name: "configmap-" + "-" + payload.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), hybrddplybl)
 
-	pruleKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	pruleKey := types.NamespacedName{Name: "configmap-" + "-" + payload.Name, Namespace: applicationAssemblerKey.Namespace}
 	prule := &prulev1.PlacementRule{}
 	g.Expect(c.Get(context.TODO(), pruleKey, prule)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), prule)
@@ -249,7 +249,7 @@ func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployable
 	g.Expect(c.Get(context.TODO(), appKey, app)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), app)
 
-	hybrddplyblKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplyblKey := types.NamespacedName{Name: "configmap-" + "-" + payload.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 }
@@ -363,7 +363,7 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	defer c.Delete(context.TODO(), fooInstance)
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	hybrddplyblKey := types.NamespacedName{Name: "deployable-" + deployableKey.Namespace + "-" + deployableKey.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplyblKey := types.NamespacedName{Name: "configmap-" + "-" + payload.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 

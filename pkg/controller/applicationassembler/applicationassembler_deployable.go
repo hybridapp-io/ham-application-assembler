@@ -16,10 +16,12 @@ package applicationassembler
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,7 +54,22 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		return err
 	}
 
-	key.Name = r.genHybridDeployableName(instance, obj)
+	// generate the hdpl name based on the template object if possible to avoid clutter around discovered deployables with long names
+	if dpl.Spec.Template != nil {
+		templateobj := &unstructured.Unstructured{}
+		err = json.Unmarshal(dpl.Spec.Template.Raw, templateobj)
+		if err != nil {
+			klog.Info("Failed to unmarshal object with error", err)
+			return err
+		}
+		key.Name = r.genHybridDeployableName(instance, &corev1.ObjectReference{
+			Kind:      templateobj.GetKind(),
+			Namespace: templateobj.GetNamespace(),
+			Name:      templateobj.GetName(),
+		})
+	} else {
+		key.Name = r.genHybridDeployableName(instance, obj)
+	}
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}
 

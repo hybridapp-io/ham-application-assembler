@@ -128,9 +128,9 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 				}
 
 				if dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping) {
-					uc, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&dpl)
+					ucMap, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&dpl)
 					ucObj := &unstructured.Unstructured{}
-					ucObj.SetUnstructuredContent(uc)
+					ucObj.SetUnstructuredContent(ucMap)
 					resources = append(resources, ucObj)
 				}
 			}
