@@ -97,7 +97,3 @@ bin
 build-harness
 build/_output
 .DS_Store
-deploy/operator.yaml
-deploy/role_binding.yaml
-deploy/role.yaml
-examples/app.yaml

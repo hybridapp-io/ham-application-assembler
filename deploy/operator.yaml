@@ -16,7 +16,7 @@ spec:
       containers:
         - name: ham-application-assembler
           # Replace this with the built image name
-          image: quay.io/rbmateescu/ham-application-assembler:v0.0.1
+          image: REPLACE_IMAGE
           command:
           - ham-application-assembler
           args: ["-v=3"]

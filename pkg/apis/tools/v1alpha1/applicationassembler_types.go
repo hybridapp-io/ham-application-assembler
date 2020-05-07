@@ -18,14 +18,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 )
 
 var (
 	// AnnotationDiscover defines the annotation used to indicate whether an application should be marked for discovery
-	AnnotationDiscover = "core.hybridapp.io/hybrid-discovered"
+	AnnotationDiscover = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discovered"
 
 	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
-	AnnotationClusterScope = "core.hybridapp.io/hybrid-discover-clusterscoped"
+	AnnotationClusterScope = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discover-clusterscoped"
 
 	// AnnotationCreateAssembler defines the annotation used to indicate whether the discovery process should also create an application assembler CR.
 	AnnotationCreateAssembler = SchemeGroupVersion.Group + "/hybrid-discover-create-assembler"
@@ -35,14 +38,14 @@ var (
 
 	//HybridDeployableGK represents the GroupVersionKind structure for a hybrid deployable
 	HybridDeployableGK = metav1.GroupKind{
-		Group: "core.hybridapp.io",
+		Group: hdplv1alpha1.SchemeGroupVersion.Group,
 		Kind:  "Deployable",
 	}
 
 	//DeployableGVK represents the GroupVersionKind structure for a deployable
 	DeployableGVK = schema.GroupVersionKind{
-		Group:   "apps.open-cluster-management.io",
-		Version: "v1",
+		Group:   dplv1.SchemeGroupVersion.Group,
+		Version: dplv1.SchemeGroupVersion.Version,
 		Kind:    "Deployable",
 	}
 )

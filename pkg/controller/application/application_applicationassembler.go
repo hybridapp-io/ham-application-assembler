@@ -37,7 +37,6 @@ func (r *ReconcileApplication) createApplicationAssembler(app *sigappv1beta1.App
 		return err
 	}
 	objectReferences := r.buildAssemblerComponents(resources)
-	//TODO
 	appasm.Spec.HubComponents = objectReferences
 
 	return r.Create(context.TODO(), appasm)
