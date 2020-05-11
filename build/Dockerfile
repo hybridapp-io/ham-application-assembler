@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.1-398
 
 LABEL   name="quay.io/hybridappio/ham-application-assembler" \
         vendor="IBM" \
