@@ -82,6 +82,7 @@ func TestApplicationDeployable(t *testing.T) {
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
-	g.Expect(dplList.Items).To(HaveLen(0))
+	newList := &dplv1.DeployableList{}
+	g.Expect(c.List(context.TODO(), newList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
+	g.Expect(newList.Items).To(HaveLen(0))
 }
