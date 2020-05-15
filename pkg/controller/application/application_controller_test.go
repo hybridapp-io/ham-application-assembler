@@ -78,7 +78,7 @@ var (
 			Name:      mc1ServiceName,
 			Namespace: mc1Name,
 			Annotations: map[string]string{
-				hdplv1alpha1.AnnotationDiscovered: "true",
+				hdplv1alpha1.AnnotationHybridDiscovery: "true",
 			},
 			Labels: map[string]string{
 				selectorName: appName,
@@ -116,7 +116,7 @@ var (
 			Name:      mc2ServiceName,
 			Namespace: mc2Name,
 			Annotations: map[string]string{
-				hdplv1alpha1.AnnotationDiscovered: "true",
+				hdplv1alpha1.AnnotationHybridDiscovery: "true",
 			},
 			Labels: map[string]string{
 				selectorName: appName,
@@ -141,7 +141,7 @@ var (
 			Namespace: "default",
 			Labels:    selectorLabels,
 			Annotations: map[string]string{
-				toolsv1alpha1.AnnotationHybridDiscovery: toolsv1alpha1.HybridDiscoveryEnabled,
+				hdplv1alpha1.AnnotationHybridDiscovery: hdplv1alpha1.HybridDiscoveryEnabled,
 			},
 		},
 		Spec: sigappv1beta1.ApplicationSpec{

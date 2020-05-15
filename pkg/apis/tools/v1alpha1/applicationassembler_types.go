@@ -24,9 +24,6 @@ import (
 )
 
 var (
-	// AnnotationHybridDiscovery defines the annotation used to indicate whether an application should be marked for discovery
-	AnnotationHybridDiscovery = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discovery"
-
 	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
 	AnnotationClusterScope = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discover-clusterscoped"
 
@@ -55,12 +52,6 @@ var (
 const (
 	// DefaultDeployerType is the default type of a deployer, used when no explicit deployer type is provided
 	DefaultDeployerType = "kubernetes"
-
-	// HybridDiscoveryEnabled indicates whether the discovery is enabled for an application CR
-	HybridDiscoveryEnabled = "enabled"
-
-	// HybridDiscoveryCompleted indicates whether the discovery has been completed for an application CR
-	HybridDiscoveryCompleted = "completed"
 
 	// HybridDiscoveryCreateAssembler indicates whether the application assembler should be created during application reconciliation
 	HybridDiscoveryCreateAssembler = "true"

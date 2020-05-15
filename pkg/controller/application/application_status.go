@@ -32,6 +32,7 @@ import (
 	"k8s.io/klog"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 const (
@@ -53,8 +54,8 @@ var (
 )
 
 func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Application) bool {
-	if _, enabled := app.GetAnnotations()[toolsv1alpha1.AnnotationHybridDiscovery]; !enabled ||
-		app.GetAnnotations()[toolsv1alpha1.AnnotationHybridDiscovery] != toolsv1alpha1.HybridDiscoveryEnabled {
+	if _, enabled := app.GetAnnotations()[hdplv1alpha1.AnnotationHybridDiscovery]; !enabled ||
+		app.GetAnnotations()[hdplv1alpha1.AnnotationHybridDiscovery] != hdplv1alpha1.HybridDiscoveryEnabled {
 		return false
 	}
 

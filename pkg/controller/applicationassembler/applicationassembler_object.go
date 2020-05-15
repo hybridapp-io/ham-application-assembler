@@ -130,7 +130,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		dpl.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
 		dpl.Namespace = cluster.Namespace
 		annotations := make(map[string]string)
-		annotations[toolsv1alpha1.AnnotationHybridDiscovery] = toolsv1alpha1.HybridDiscoveryEnabled
+		annotations[hdplv1alpha1.AnnotationHybridDiscovery] = hdplv1alpha1.HybridDiscoveryEnabled
 		dpl.Annotations = annotations
 
 		tpl := &unstructured.Unstructured{}
