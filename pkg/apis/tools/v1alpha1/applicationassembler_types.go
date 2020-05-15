@@ -24,14 +24,14 @@ import (
 )
 
 var (
-	// AnnotationDiscover defines the annotation used to indicate whether an application should be marked for discovery
-	AnnotationDiscover = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discovered"
+	// AnnotationHybridDiscovery defines the annotation used to indicate whether an application should be marked for discovery
+	AnnotationHybridDiscovery = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discovery"
 
 	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
 	AnnotationClusterScope = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discover-clusterscoped"
 
 	// AnnotationCreateAssembler defines the annotation used to indicate whether the discovery process should also create an application assembler CR.
-	AnnotationCreateAssembler = SchemeGroupVersion.Group + "/hybrid-discover-create-assembler"
+	AnnotationCreateAssembler = SchemeGroupVersion.Group + "/hybrid-discovery-create-assembler"
 
 	// LabelApplicationPrefix defines the label prefix used as component selector
 	LabelApplicationPrefix = SchemeGroupVersion.Group + "/application-"
@@ -56,8 +56,14 @@ const (
 	// DefaultDeployerType is the default type of a deployer, used when no explicit deployer type is provided
 	DefaultDeployerType = "kubernetes"
 
-	// DiscoveryEnabled indicates whether the discovery is enabled for an application CR
-	DiscoveryEnabled = "true"
+	// HybridDiscoveryEnabled indicates whether the discovery is enabled for an application CR
+	HybridDiscoveryEnabled = "enabled"
+
+	// HybridDiscoveryCompleted indicates whether the discovery has been completed for an application CR
+	HybridDiscoveryCompleted = "completed"
+
+	// HybridDiscoveryCreateAssembler indicates whether the application assembler should be created during application reconciliation
+	HybridDiscoveryCreateAssembler = "true"
 
 	//AssemblerCreationCompleted indicates the process of creating the assembler CR has finished successfully
 	AssemblerCreationCompleted = "completed"

@@ -172,11 +172,6 @@ func (r *ReconcileApplication) prepareDeployable(deployable *dplv1.Deployable, a
 	}
 
 	annotations[hdplv1alpha1.SourceObject] = types.NamespacedName{Namespace: app.GetNamespace(), Name: app.GetName()}.String()
-	if r.isAppDiscoveryEnabled(app) {
-		annotations[hdplv1alpha1.AnnotationDiscovered] = app.Annotations[hdplv1alpha1.AnnotationDiscovered]
-	} else if _, ok := annotations[hdplv1alpha1.AnnotationDiscovered]; ok {
-		delete(annotations, annotations[hdplv1alpha1.AnnotationDiscovered])
-	}
 	deployable.SetAnnotations(annotations)
 }
 
@@ -188,4 +183,5 @@ func (r *ReconcileApplication) prepareTemplate(app *sigappv1beta1.Application, n
 	app.SetGeneration(0)
 	app.SetCreationTimestamp(metav1.Time{})
 	app.SetNamespace(namespace)
+	app.SetOwnerReferences(nil)
 }

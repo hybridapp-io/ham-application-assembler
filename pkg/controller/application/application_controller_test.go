@@ -24,7 +24,6 @@ import (
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
@@ -142,7 +141,7 @@ var (
 			Namespace: "default",
 			Labels:    selectorLabels,
 			Annotations: map[string]string{
-				toolsv1alpha1.AnnotationDiscover: toolsv1alpha1.DiscoveryEnabled,
+				toolsv1alpha1.AnnotationHybridDiscovery: toolsv1alpha1.HybridDiscoveryEnabled,
 			},
 		},
 		Spec: sigappv1beta1.ApplicationSpec{
@@ -198,129 +197,6 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 }
 
-func TestApplicationDeployable(t *testing.T) {
-	g := NewWithT(t)
-
-	var c client.Client
-
-	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
-
-	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
-	// channel when it is finished.
-	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
-	g.Expect(err).NotTo(HaveOccurred())
-
-	c = mgr.GetClient()
-
-	rec := newReconciler(mgr)
-	recFn, requests := SetupTestReconcile(rec)
-
-	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
-
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
-
-	defer func() {
-		close(stopMgr)
-		mgrStopped.Wait()
-	}()
-
-	// Stand up the infrastructure
-	cl1 := mc1.DeepCopy()
-	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), cl1)
-
-	cl2 := mc2.DeepCopy()
-	g.Expect(c.Create(context.TODO(), cl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), cl2)
-
-	// Create the Application object and expect the Reconcile and Deployable to be created
-	app := application.DeepCopy()
-	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
-	// wait for reconcile to finish
-	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
-
-	dplList := &dplv1.DeployableList{}
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
-	g.Expect(dplList.Items).To(HaveLen(2))
-
-	for _, dpl := range dplList.Items {
-		g.Expect(dpl.Namespace).To(BeElementOf([]string{mc1Name, mc2Name}))
-	}
-
-	// app cleanup should also delete the app deployables
-	c.Delete(context.TODO(), app)
-	// wait for reconcile to finish
-	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
-
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
-	g.Expect(dplList.Items).To(HaveLen(0))
-}
-
-func TestDiscoveredComponents(t *testing.T) {
-	g := NewWithT(t)
-
-	var c client.Client
-
-	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
-
-	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
-	// channel when it is finished.
-	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
-	g.Expect(err).NotTo(HaveOccurred())
-
-	c = mgr.GetClient()
-
-	rec := newReconciler(mgr)
-	recFn, requests := SetupTestReconcile(rec)
-
-	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
-
-	stopMgr, mgrStopped := StartTestManager(mgr, g)
-
-	defer func() {
-		close(stopMgr)
-		mgrStopped.Wait()
-	}()
-
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dpl1)
-
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), dpl2)
-
-	// Create the Application object and expect the deployables
-	app := application.DeepCopy()
-	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), app)
-	// wait for reconcile to finish
-	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
-
-	// the two services should now be in the app status
-	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
-
-	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(2))
-	components := []sigappv1beta1.ObjectStatus{
-		{
-			Group: toolsv1alpha1.DeployableGVK.Group,
-			Kind:  toolsv1alpha1.DeployableGVK.Kind,
-			Name:  dpl1.Name,
-			Link:  dpl1.SelfLink,
-		},
-		{
-			Group: toolsv1alpha1.DeployableGVK.Group,
-			Kind:  toolsv1alpha1.DeployableGVK.Kind,
-			Name:  dpl2.Name,
-			Link:  dpl2.SelfLink,
-		},
-	}
-	for _, comp := range app.Status.ComponentList.Objects {
-		g.Expect(comp).To(BeElementOf(components))
-	}
-}
-
 func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T) {
 	g := NewWithT(t)
 
@@ -367,7 +243,7 @@ func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T)
 
 	// Create the Application object and expect the hybrid deployables in its status
 	app := application.DeepCopy()
-	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.DiscoveryEnabled
+	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.HybridDiscoveryCreateAssembler
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), app)
 
@@ -447,7 +323,7 @@ func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
 
 	// Create the Application object and expect the hybrid deployables in its status
 	app := application.DeepCopy()
-	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.DiscoveryEnabled
+	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.HybridDiscoveryCreateAssembler
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), app)
 

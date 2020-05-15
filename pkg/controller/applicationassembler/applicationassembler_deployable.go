@@ -35,7 +35,7 @@ import (
 )
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(instance *toolsv1alpha1.ApplicationAssembler,
-	obj *corev1.ObjectReference, appID string) error {
+	obj *corev1.ObjectReference, appID string, cluster *types.NamespacedName) error {
 	var err error
 
 	dpl := &dplv1.Deployable{}
@@ -66,9 +66,9 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 			Kind:      templateobj.GetKind(),
 			Namespace: templateobj.GetNamespace(),
 			Name:      templateobj.GetName(),
-		})
+		}, cluster)
 	} else {
-		key.Name = r.genHybridDeployableName(instance, obj)
+		key.Name = r.genHybridDeployableName(instance, obj, cluster)
 	}
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}

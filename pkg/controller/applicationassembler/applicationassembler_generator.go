@@ -78,7 +78,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *tool
 
 	for _, obj := range instance.Spec.HubComponents {
 		if err = r.generateHybridDeployableFromObject(instance, obj, appID); err != nil {
-			klog.Error("Failed to generate hybrid deployable from object in lcoal cluster for ", obj.Namespace+"/"+obj.Name)
+			klog.Error("Failed to generate hybrid deployable from object in local cluster for ", obj.Namespace+"/"+obj.Name)
 			return err
 
 		}
@@ -104,13 +104,13 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *tool
 		}
 		for _, obj := range managedCluster.Components {
 			if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.DeployableGVK {
-				if err = r.generateHybridDeployableFromDeployable(instance, obj, appID); err != nil {
+				if err = r.generateHybridDeployableFromDeployable(instance, obj, appID, &clusterKey); err != nil {
 					klog.Error("Failed to generate hybrid deployable from deployable for ", obj.Namespace+"/"+obj.Name)
 					return err
 				}
 
 			} else {
-				if err = r.generateHybridDeployableFromObjectInManagedCluster(instance, obj, appID, clusterKey); err != nil {
+				if err = r.generateHybridDeployableFromObjectInManagedCluster(instance, obj, appID, &clusterKey); err != nil {
 					klog.Error("Failed to generate hybrid deployable from object in managed cluster for ", obj.Namespace+"/"+obj.Name)
 					return err
 				}
@@ -146,11 +146,14 @@ func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.Deployabl
 }
 
 func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *toolsv1alpha1.ApplicationAssembler,
-	metaobj *corev1.ObjectReference) string {
+	metaobj *corev1.ObjectReference, cluster *types.NamespacedName) string {
 	if instance == nil || metaobj == nil {
 		return ""
 	}
 
+	if cluster != nil {
+		return strings.ToLower(cluster.Name + "-" + metaobj.Kind + "-" + metaobj.Namespace + "-" + metaobj.Name)
+	}
 	return strings.ToLower(metaobj.Kind + "-" + metaobj.Namespace + "-" + metaobj.Name)
 }
 

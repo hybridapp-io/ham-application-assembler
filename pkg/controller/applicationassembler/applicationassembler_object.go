@@ -39,7 +39,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	objref *corev1.ObjectReference, appID string) error {
 	objgvr, ok := r.gvkGVRMap[objref.GetObjectKind().GroupVersionKind()]
 	if !ok {
-		klog.Error("Failed to find right resource group for object:", objref)
+		klog.Error("Failed to find GVR for object:", objref.GetObjectKind().GroupVersionKind())
 	}
 
 	ucobj, err := r.dynamicClient.Resource(objgvr).Namespace(objref.Namespace).Get(objref.Name, metav1.GetOptions{})
@@ -49,7 +49,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	var key types.NamespacedName
-	key.Name = r.genHybridDeployableName(instance, objref)
+	key.Name = r.genHybridDeployableName(instance, objref, nil)
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}
 
@@ -109,10 +109,10 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 }
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInManagedCluster(instance *toolsv1alpha1.ApplicationAssembler,
-	obj *corev1.ObjectReference, appID string, cluster types.NamespacedName) error {
+	obj *corev1.ObjectReference, appID string, cluster *types.NamespacedName) error {
 
 	hdplKey := types.NamespacedName{
-		Name:      r.genHybridDeployableName(instance, obj),
+		Name:      r.genHybridDeployableName(instance, obj, cluster),
 		Namespace: instance.Namespace,
 	}
 	hdpl := &hdplv1alpha1.Deployable{}
@@ -130,7 +130,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		dpl.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
 		dpl.Namespace = cluster.Namespace
 		annotations := make(map[string]string)
-		annotations[toolsv1alpha1.AnnotationDiscover] = toolsv1alpha1.DiscoveryEnabled
+		annotations[toolsv1alpha1.AnnotationHybridDiscovery] = toolsv1alpha1.HybridDiscoveryEnabled
 		dpl.Annotations = annotations
 
 		tpl := &unstructured.Unstructured{}
@@ -141,12 +141,14 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		dpl.Spec.Template = &runtime.RawExtension{
 			Object: tpl,
 		}
-		r.updateObject(hdpl, dpl)
-		err := r.Client.Create(context.TODO(), dpl)
-		if err != nil {
-			klog.Error("Failed to create deployable ", cluster.Namespace+"/"+obj.Name)
-			return err
-		}
+		hdpl.Annotations = dpl.Annotations
+
+		// r.updateObject(hdpl, dpl)
+		// err := r.Client.Create(context.TODO(), dpl)
+		// if err != nil {
+		// 	klog.Error("Failed to create deployable ", cluster.Namespace+"/"+obj.Name)
+		// 	return err
+		// }
 
 		return r.buildHybridDeployable(hdpl, dpl, appID)
 	}

@@ -53,8 +53,8 @@ var (
 )
 
 func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Application) bool {
-	if _, enabled := app.GetAnnotations()[toolsv1alpha1.AnnotationDiscover]; !enabled ||
-		app.GetAnnotations()[toolsv1alpha1.AnnotationDiscover] != toolsv1alpha1.DiscoveryEnabled {
+	if _, enabled := app.GetAnnotations()[toolsv1alpha1.AnnotationHybridDiscovery]; !enabled ||
+		app.GetAnnotations()[toolsv1alpha1.AnnotationHybridDiscovery] != toolsv1alpha1.HybridDiscoveryEnabled {
 		return false
 	}
 
@@ -63,7 +63,7 @@ func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Applicat
 
 func (r *ReconcileApplication) isCreateAssemblerEnabled(app *sigappv1beta1.Application) bool {
 	if _, enabled := app.GetAnnotations()[toolsv1alpha1.AnnotationCreateAssembler]; !enabled ||
-		app.GetAnnotations()[toolsv1alpha1.AnnotationCreateAssembler] != toolsv1alpha1.DiscoveryEnabled {
+		app.GetAnnotations()[toolsv1alpha1.AnnotationCreateAssembler] != toolsv1alpha1.HybridDiscoveryCreateAssembler {
 		return false
 	}
 
