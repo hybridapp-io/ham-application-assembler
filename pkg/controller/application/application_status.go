@@ -109,6 +109,14 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 
 		for _, u := range list.Items {
 			resource := u
+			// ignore the resource if it belongs to another hub, this helps the all-in-one poc scenario
+			ra := resource.GetAnnotations()
+			if ra != nil {
+				if _, ok := ra[dplv1.AnnotationHosting]; ok {
+					continue
+				}
+			}
+
 			resources = append(resources, &resource)
 		}
 
