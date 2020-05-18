@@ -24,9 +24,6 @@ import (
 )
 
 var (
-	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
-	AnnotationClusterScope = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discover-clusterscoped"
-
 	// AnnotationCreateAssembler defines the annotation used to indicate whether the discovery process should also create an application assembler CR.
 	AnnotationCreateAssembler = SchemeGroupVersion.Group + "/hybrid-discovery-create-assembler"
 
