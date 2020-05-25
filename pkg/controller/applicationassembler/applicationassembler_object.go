@@ -53,6 +53,17 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}
 
+	err = r.Get(context.TODO(), key, hdpl)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			klog.Error("Failed to retrieve hybrid deployable ", key.String(), " with error: ", err)
+			return err
+		}
+
+		hdpl.Name = key.Name
+		hdpl.Namespace = key.Namespace
+	}
+
 	labels := hdpl.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
@@ -60,17 +71,6 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 
 	labels[toolsv1alpha1.LabelApplicationPrefix+appID] = appID
 	hdpl.SetLabels(labels)
-
-	err = r.Get(context.TODO(), key, hdpl)
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			klog.Error("Failed to work with api server for hybrid deployable with error:", err)
-			return err
-		}
-
-		hdpl.Name = key.Name
-		hdpl.Namespace = key.Namespace
-	}
 
 	newtpl, deployer, err := r.generateHybridTemplateFromObject(ucobj)
 	if err != nil {
@@ -100,9 +100,16 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	if hdpl.UID != "" {
-		err = r.Update(context.TODO(), hdpl)
+		if err = r.Update(context.TODO(), hdpl); err != nil {
+			klog.Error("Failed to update hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
+			return err
+		}
+
 	} else {
-		err = r.Create(context.TODO(), hdpl)
+		if err = r.Create(context.TODO(), hdpl); err != nil {
+			klog.Error("Failed to create hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
+			return err
+		}
 	}
 
 	return err
@@ -143,15 +150,21 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		}
 		hdpl.Annotations = dpl.Annotations
 
-		// r.updateObject(hdpl, dpl)
-		// err := r.Client.Create(context.TODO(), dpl)
-		// if err != nil {
-		// 	klog.Error("Failed to create deployable ", cluster.Namespace+"/"+obj.Name)
-		// 	return err
-		// }
-
 		return r.buildHybridDeployable(hdpl, dpl, appID)
 	}
+
+	labels := hdpl.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	labels[toolsv1alpha1.LabelApplicationPrefix+appID] = appID
+	hdpl.SetLabels(labels)
+	if err = r.Update(context.TODO(), hdpl); err != nil {
+		klog.Error("Failed to update hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
+		return err
+	}
+
 	return nil
 }
 

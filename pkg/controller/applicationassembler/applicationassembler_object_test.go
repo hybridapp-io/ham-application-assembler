@@ -20,7 +20,6 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,59 +28,83 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+)
+
+var (
+	serviceName = "mysql-svc-mc"
+
+	service = corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceName,
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Port: 3306,
+				},
+			},
+		},
+	}
+
+	applicationAssembler1Key = types.NamespacedName{
+		Name:      "foo",
+		Namespace: "default",
+	}
+
+	applicationAssembler2Key = types.NamespacedName{
+		Name:      "bar",
+		Namespace: "default",
+	}
+
+	applicationAssembler1 = &toolsv1alpha1.ApplicationAssembler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      applicationAssembler1Key.Name,
+			Namespace: applicationAssembler1Key.Namespace,
+		},
+		Spec: toolsv1alpha1.ApplicationAssemblerSpec{
+			HubComponents: []*corev1.ObjectReference{
+				{
+					APIVersion: service.APIVersion,
+					Kind:       service.Kind,
+					Name:       service.Name,
+					Namespace:  service.Namespace,
+				},
+			},
+		},
+	}
+
+	applicationAssembler2 = &toolsv1alpha1.ApplicationAssembler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      applicationAssembler2Key.Name,
+			Namespace: applicationAssembler2Key.Namespace,
+		},
+		Spec: toolsv1alpha1.ApplicationAssemblerSpec{
+			HubComponents: []*corev1.ObjectReference{
+				{
+					APIVersion: service.APIVersion,
+					Kind:       service.Kind,
+					Name:       service.Name,
+					Namespace:  service.Namespace,
+				},
+			},
+		},
+	}
 )
 
 func TestHubComponents(t *testing.T) {
 	g := NewWithT(t)
 
-	var (
-		serviceName = "mysql-svc-mc"
-
-		service = corev1.Service{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Service",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceName,
-				Namespace: "default",
-			},
-			Spec: v1.ServiceSpec{
-				Ports: []v1.ServicePort{
-					{
-						Port: 3306,
-					},
-				},
-			},
-		}
-
-		applicationAssemblerKey = types.NamespacedName{
-			Name:      "foo-app",
-			Namespace: "default",
-		}
-
-		applicationAssembler = &toolsv1alpha1.ApplicationAssembler{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      applicationAssemblerKey.Name,
-				Namespace: applicationAssemblerKey.Namespace,
-			},
-			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
-				HubComponents: []*corev1.ObjectReference{
-					{
-						APIVersion: service.APIVersion,
-						Kind:       service.Kind,
-						Name:       service.Name,
-						Namespace:  service.Namespace,
-					},
-				},
-			},
-		}
-	)
-
 	var c client.Client
 
-	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+	var expectedRequest = reconcile.Request{NamespacedName: applicationAssembler1Key}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -105,7 +128,7 @@ func TestHubComponents(t *testing.T) {
 	defer c.Delete(context.TODO(), svc)
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
-	instance := applicationAssembler.DeepCopy()
+	instance := applicationAssembler1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
 	defer c.Delete(context.TODO(), instance)
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
@@ -113,4 +136,63 @@ func TestHubComponents(t *testing.T) {
 	hybrddplyblKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), hybrddplybl)
+}
+
+func TestHubComponentsAnnotations(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest1 = reconcile.Request{NamespacedName: applicationAssembler1Key}
+	var expectedRequest2 = reconcile.Request{NamespacedName: applicationAssembler2Key}
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	svc := service.DeepCopy()
+	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svc)
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance1 := applicationAssembler1.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance1)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance1)
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest1)))
+
+	app1 := &sigappv1beta1.Application{}
+	app1Key := types.NamespacedName{Name: applicationAssembler1Key.Name, Namespace: applicationAssembler1Key.Namespace}
+	g.Expect(c.Get(context.TODO(), app1Key, app1)).NotTo(HaveOccurred())
+
+	instance2 := applicationAssembler2.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance2)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance2)
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest2)))
+
+	app2 := &sigappv1beta1.Application{}
+	app2Key := types.NamespacedName{Name: applicationAssembler2Key.Name, Namespace: applicationAssembler2Key.Namespace}
+	g.Expect(c.Get(context.TODO(), app2Key, app2)).NotTo(HaveOccurred())
+
+	hybrddplyblKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplybl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), hybrddplybl)
+
+	labels := hybrddplybl.Labels
+	g.Expect(labels[toolsv1alpha1.LabelApplicationPrefix+string(app1.GetUID())]).To(Equal(string(app1.GetUID())))
+	g.Expect(labels[toolsv1alpha1.LabelApplicationPrefix+string(app2.GetUID())]).To(Equal(string(app2.GetUID())))
+
 }
