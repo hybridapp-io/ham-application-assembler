@@ -150,7 +150,6 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 		if err != nil {
 			klog.Error("Failed to reconcile status for application "+appKey.String()+" with error: ", err)
 		}
-
 		return reconcile.Result{}, err
 	}
 
@@ -175,10 +174,15 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 					return reconcile.Result{}, err
 				}
 
-				err = r.updateAnnotation(app, toolsv1alpha1.AnnotationCreateAssembler, toolsv1alpha1.AssemblerCreationCompleted)
+				err = r.updateDiscoveryAnnotations(app)
 				if err != nil {
-					klog.Error("Failed to update annotation with error: ", err)
+					klog.Error("Failed to update annotation", toolsv1alpha1.AnnotationCreateAssembler, " with error: ", err)
 					return reconcile.Result{}, err
+				}
+
+				err = r.deleteApplicationDeployables(request.NamespacedName)
+				if err != nil {
+					klog.Error("Failed to delete deployables for application "+appKey.String()+" with error: ", err)
 				}
 			}
 		}

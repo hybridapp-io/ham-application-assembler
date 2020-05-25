@@ -75,14 +75,16 @@ func (r *ReconcileApplication) generateName(name string) string {
 	return name + "-"
 }
 
-func (r *ReconcileApplication) updateAnnotation(app *sigappv1beta1.Application, annotation string, newValue string) error {
+func (r *ReconcileApplication) updateDiscoveryAnnotations(app *sigappv1beta1.Application) error {
 
-	if _, ok := app.GetAnnotations()[annotation]; ok {
-		app.Annotations[annotation] = newValue
-		err := r.Update(context.TODO(), app)
-		return err
+	if _, ok := app.GetAnnotations()[hdplv1alpha1.AnnotationHybridDiscovery]; ok {
+		app.Annotations[hdplv1alpha1.AnnotationHybridDiscovery] = hdplv1alpha1.HybridDiscoveryCompleted
 	}
-	return nil
+	if _, ok := app.GetAnnotations()[toolsv1alpha1.AnnotationCreateAssembler]; ok {
+		app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.AssemblerCreationCompleted
+	}
+	err := r.Update(context.TODO(), app)
+	return err
 }
 
 func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.Application) ([]*unstructured.Unstructured, error) {
