@@ -31,8 +31,10 @@ import (
 	subv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	hdplv1alpha1utils "github.com/hybridapp-io/ham-deployable-operator/pkg/utils"
 )
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(instance *toolsv1alpha1.ApplicationAssembler,
@@ -168,50 +170,46 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 	return nil
 }
 
-func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1alpha1.HybridTemplate,
-	*hdplv1alpha1.Deployer, error) {
-	var err error
-
-	var deployer *hdplv1alpha1.Deployer
-
-	deployerlist := &hdplv1alpha1.DeployerList{}
-
-	err = r.List(context.TODO(), deployerlist, &client.ListOptions{Namespace: ucobj.GetNamespace()})
-	if err != nil {
-		klog.Error("Failed to list deployers in namespace with error:", err)
-		return nil, nil, err
-	}
-
-	for _, item := range deployerlist.Items {
-		deployer = &item
-	}
-
-	// check deployerset for cluster namespace
-	if deployer == nil {
-		deployersetlist := &hdplv1alpha1.DeployerSetList{}
-
-		err = r.List(context.TODO(), deployersetlist, &client.ListOptions{Namespace: ucobj.GetNamespace()})
-		if err != nil {
-			klog.Error("Failed to list deployers in namespace with error:", err)
-			return nil, nil, err
-		}
-
-		for _, item := range deployersetlist.Items {
-			if item.Spec.DefaultDeployer == "" && len(item.Spec.Deployers) > 0 {
-				item.Spec.DefaultDeployer = item.Spec.Deployers[0].Key
-			}
-
-			for _, dply := range item.Spec.Deployers {
-				if dply.Key == item.Spec.DefaultDeployer {
-					deployer = &hdplv1alpha1.Deployer{}
-					dply.Spec.DeepCopyInto(&deployer.Spec)
-
-					break
+func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.Deployer, ucobj *unstructured.Unstructured) *hdplv1alpha1.Deployer {
+	gvr, ok := r.gvkGVRMap[ucobj.GetObjectKind().GroupVersionKind()]
+	if ok {
+		for _, hubDeployer := range deployers {
+			// in cluster deployer
+			if hdplv1alpha1utils.IsInClusterDeployer(&hubDeployer) {
+				// cluster vs namespaced scope
+				if hubDeployer.Spec.ClusterScope || hubDeployer.ObjectMeta.Namespace == ucobj.GetNamespace() {
+					if hubDeployer.Spec.Capabilities != nil {
+						for _, capability := range hubDeployer.Spec.Capabilities {
+							// group
+							for _, apiGroup := range capability.APIGroups {
+								if apiGroup == "*" || apiGroup == utils.StripVersion(ucobj.GetAPIVersion()) {
+									for _, resource := range capability.Resources {
+										if resource == "*" || resource == gvr.Resource {
+											return &hubDeployer
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
+	} else {
+		klog.Error("Failed to retrieve GVR for GVK ", ucobj.GetObjectKind().GroupVersionKind())
 	}
+	return nil
+}
 
+func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1alpha1.HybridTemplate,
+	*hdplv1alpha1.Deployer, error) {
+
+	deployerlist := &hdplv1alpha1.DeployerList{}
+	if err := r.List(context.TODO(), deployerlist, &client.ListOptions{}); err != nil {
+		klog.Error("Failed to list deployers")
+		return nil, nil, err
+	}
+	deployer := r.selectDeployer(deployerlist.Items, ucobj)
 	if deployer == nil {
 		deployer = &hdplv1alpha1.Deployer{}
 		deployer.Spec.Type = toolsv1alpha1.DefaultDeployerType
