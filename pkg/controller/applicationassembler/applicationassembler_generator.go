@@ -30,6 +30,7 @@ import (
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
@@ -152,9 +153,11 @@ func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *toolsv
 	}
 
 	if cluster != nil {
-		return strings.ToLower(cluster.Name + "-" + metaobj.Kind + "-" + metaobj.Namespace + "-" + metaobj.Name)
+		return utils.TruncateString(strings.ToLower(cluster.Name+"-"+metaobj.Kind+"-"+
+			metaobj.Namespace+"-"+metaobj.Name), toolsv1alpha1.GeneratedDeployableNameLength)
 	}
-	return strings.ToLower(metaobj.Kind + "-" + metaobj.Namespace + "-" + metaobj.Name)
+	return utils.TruncateString(strings.ToLower(metaobj.Kind+"-"+metaobj.Namespace+
+		"-"+metaobj.Name), toolsv1alpha1.GeneratedDeployableNameLength)
 }
 
 func (r *ReconcileApplicationAssembler) updateApplication(instance *toolsv1alpha1.ApplicationAssembler, app *sigappv1beta1.Application) (string, error) {

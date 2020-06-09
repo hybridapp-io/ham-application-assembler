@@ -29,6 +29,7 @@ import (
 
 const (
 	packageDetailLogLevel = 5
+	dns1035regex          = "[a-z]([-a-z0-9]*[a-z0-9])?"
 )
 
 var (
@@ -125,4 +126,14 @@ func ConvertLabel(labelSelector *metav1.LabelSelector) (labels.Selector, error) 
 	}
 
 	return labels.Everything(), nil
+}
+
+func TruncateString(str string, num int) string {
+	truncated := str
+	if len(str) > num {
+		truncated = str[0:num]
+		r, _ := regexp.Compile(dns1035regex)
+		truncated = r.FindString(truncated)
+	}
+	return truncated
 }

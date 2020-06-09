@@ -55,6 +55,9 @@ const (
 
 	//AssemblerCreationCompleted indicates the process of creating the assembler CR has finished successfully
 	AssemblerCreationCompleted = "completed"
+
+	// GeneratedDeployableNameLength is the max length of a generated name for a deployable.
+	GeneratedDeployableNameLength = 63
 )
 
 // ClusterComponent defines a list of components for a managed cluster identified by its namespace
