@@ -20,8 +20,10 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,11 +33,15 @@ import (
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 )
 
 var (
-	serviceName = "mysql-svc-mc"
+	serviceName      = "mysql-svc"
+	stsName          = "mysql-sts"
+	applicationName  = "wordpress-01"
+	appLabelSelector = "app.kubernetes.io/name"
 
 	service = corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -50,6 +56,27 @@ var (
 			Ports: []v1.ServicePort{
 				{
 					Port: 3306,
+				},
+			},
+		},
+	}
+
+	sts = &apps.StatefulSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StatefulSet",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      stsName,
+			Namespace: "default",
+		},
+		Spec: apps.StatefulSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{appLabelSelector: applicationName},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{appLabelSelector: applicationName},
 				},
 			},
 		},
@@ -96,6 +123,44 @@ var (
 					Namespace:  service.Namespace,
 				},
 			},
+		},
+	}
+
+	applicationAssemblerHub = &toolsv1alpha1.ApplicationAssembler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      applicationAssemblerKey.Name,
+			Namespace: applicationAssemblerKey.Namespace,
+		},
+		Spec: toolsv1alpha1.ApplicationAssemblerSpec{
+			HubComponents: []*corev1.ObjectReference{
+				{
+					APIVersion: service.APIVersion,
+					Kind:       service.Kind,
+					Name:       service.Name,
+					Namespace:  service.Namespace,
+				},
+				{
+					APIVersion: sts.APIVersion,
+					Kind:       sts.Kind,
+					Name:       sts.Name,
+					Namespace:  sts.Namespace,
+				},
+			},
+		},
+	}
+
+	fooDeployer = &hdplv1alpha1.Deployer{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Deployer",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "foo",
+			Namespace:   "default",
+			Annotations: map[string]string{hdplv1alpha1.DeployerInCluster: "true"},
+		},
+		Spec: hdplv1alpha1.DeployerSpec{
+			Type:         "foo",
+			ClusterScope: true,
 		},
 	}
 )
@@ -195,6 +260,240 @@ func TestHubComponentsAnnotations(t *testing.T) {
 	labels := hybrddplybl.Labels
 	g.Expect(labels[toolsv1alpha1.LabelApplicationPrefix+string(app1.GetUID())]).To(Equal(string(app1.GetUID())))
 	g.Expect(labels[toolsv1alpha1.LabelApplicationPrefix+string(app2.GetUID())]).To(Equal(string(app2.GetUID())))
+
+}
+
+func TestHubComponentsPlacementBySingleDeployer(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	svc := service.DeepCopy()
+	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svc)
+
+	sts := sts.DeepCopy()
+	g.Expect(c.Create(context.TODO(), sts)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), sts)
+
+	deployer := fooDeployer.DeepCopy()
+	deployer.Spec.Capabilities = []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"*"},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
+		},
+	}
+	g.Expect(c.Create(context.TODO(), deployer)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), deployer)
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance := applicationAssemblerHub.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance)
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	svcHdplKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
+	svcHdpl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), svcHdplKey, svcHdpl)).NotTo(HaveOccurred())
+	g.Expect(svcHdpl.Spec.Placement.Deployers).To(HaveLen(1))
+	g.Expect(svcHdpl.Spec.Placement.Deployers[0].Name).To(Equal(deployer.Name))
+	defer c.Delete(context.TODO(), svcHdpl)
+
+	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
+	stsHdpl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), stsHdplKey, stsHdpl)).NotTo(HaveOccurred())
+
+	g.Expect(svcHdpl.Spec.HybridTemplates).To(HaveLen(1))
+	g.Expect(svcHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(fooDeployer.Spec.Type))
+
+	g.Expect(svcHdpl.Spec.Placement.Deployers).To(HaveLen(1))
+	g.Expect(svcHdpl.Spec.Placement.Deployers[0].Name).To(Equal(deployer.Name))
+	defer c.Delete(context.TODO(), stsHdpl)
+
+}
+
+func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	svc := service.DeepCopy()
+	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svc)
+
+	sts := sts.DeepCopy()
+	g.Expect(c.Create(context.TODO(), sts)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), sts)
+
+	stsDeployer := fooDeployer.DeepCopy()
+	stsDeployer.Name = "sts-" + fooDeployer.Name
+	stsDeployer.Spec.Capabilities = []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"statefulsets"},
+			Verbs:     []string{"*"},
+		},
+	}
+	g.Expect(c.Create(context.TODO(), stsDeployer)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), stsDeployer)
+
+	svcDeployer := fooDeployer.DeepCopy()
+	svcDeployer.Name = "svc-" + fooDeployer.Name
+	svcDeployer.Spec.Capabilities = []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"services"},
+			Verbs:     []string{"*"},
+		},
+	}
+	g.Expect(c.Create(context.TODO(), svcDeployer)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svcDeployer)
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance := applicationAssemblerHub.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance)
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	svcHdplKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
+	svcHdpl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), svcHdplKey, svcHdpl)).NotTo(HaveOccurred())
+
+	g.Expect(svcHdpl.Spec.HybridTemplates).To(HaveLen(1))
+	g.Expect(svcHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(svcDeployer.Spec.Type))
+
+	g.Expect(svcHdpl.Spec.Placement.Deployers).To(HaveLen(1))
+	g.Expect(svcHdpl.Spec.Placement.Deployers[0].Name).To(Equal(svcDeployer.Name))
+	defer c.Delete(context.TODO(), svcHdpl)
+
+	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
+	stsHdpl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), stsHdplKey, stsHdpl)).NotTo(HaveOccurred())
+
+	g.Expect(stsHdpl.Spec.HybridTemplates).To(HaveLen(1))
+	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(stsDeployer.Spec.Type))
+
+	g.Expect(stsHdpl.Spec.Placement.Deployers).To(HaveLen(1))
+	g.Expect(stsHdpl.Spec.Placement.Deployers[0].Name).To(Equal(stsDeployer.Name))
+	defer c.Delete(context.TODO(), stsHdpl)
+
+}
+
+func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	svc := service.DeepCopy()
+	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svc)
+
+	sts := sts.DeepCopy()
+	g.Expect(c.Create(context.TODO(), sts)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), sts)
+
+	stsDeployer := fooDeployer.DeepCopy()
+	stsDeployer.Name = "sts-" + fooDeployer.Name
+	stsDeployer.Spec.Capabilities = []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"secrets"},
+			Verbs:     []string{"*"},
+		},
+	}
+	g.Expect(c.Create(context.TODO(), stsDeployer)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), stsDeployer)
+
+	svcDeployer := fooDeployer.DeepCopy()
+	svcDeployer.Name = "svc-" + fooDeployer.Name
+	svcDeployer.Spec.Capabilities = []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"events"},
+			Verbs:     []string{"*"},
+		},
+	}
+	g.Expect(c.Create(context.TODO(), svcDeployer)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svcDeployer)
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance := applicationAssemblerHub.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance)
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	svcHdplKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
+	svcHdpl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), svcHdplKey, svcHdpl)).NotTo(HaveOccurred())
+
+	g.Expect(svcHdpl.Spec.HybridTemplates).To(HaveLen(1))
+	g.Expect(svcHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(toolsv1alpha1.DefaultDeployerType))
+
+	defer c.Delete(context.TODO(), svcHdpl)
+
+	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
+	stsHdpl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), stsHdplKey, stsHdpl)).NotTo(HaveOccurred())
+
+	g.Expect(stsHdpl.Spec.HybridTemplates).To(HaveLen(1))
+	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(toolsv1alpha1.DefaultDeployerType))
+
+	defer c.Delete(context.TODO(), stsHdpl)
 
 }
 
