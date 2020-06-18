@@ -150,7 +150,8 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 		if err != nil {
 			klog.Error("Failed to reconcile status for application "+appKey.String()+" with error: ", err)
 		}
-		return reconcile.Result{}, err
+		// tolerate status update errors for now
+		return reconcile.Result{}, nil
 	}
 
 	// reconcile the application deployables which might trigger an app reconcile on all managed clusters
@@ -191,7 +192,7 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 	err = r.updateApplicationStatus(app)
 	if err != nil {
 		klog.Error("Failed to reconcile status for application "+appKey.String()+" with error: ", err)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	klog.V(packageInfoLogLevel).Info("Reconcile Application: ", request, " finished with error:", err)
