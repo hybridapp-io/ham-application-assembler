@@ -21,12 +21,9 @@ import (
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 
-	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog"
@@ -60,7 +57,6 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileApplication{
 		Client:        mgr.GetClient(),
 		scheme:        mgr.GetScheme(),
-		gvkGVRMap:     utils.BuildGVKGVRMap(mgr.GetConfig()),
 		dynamicClient: dynamicclient,
 		restMapper:    mgr.GetRESTMapper()}
 
@@ -108,7 +104,6 @@ type ReconcileApplication struct {
 	// that reads objects from the cache and writes to the apiserver
 	client.Client
 	dynamicClient dynamic.Interface
-	gvkGVRMap     map[schema.GroupVersionKind]schema.GroupVersionResource
 	scheme        *runtime.Scheme
 	restMapper    meta.RESTMapper
 }

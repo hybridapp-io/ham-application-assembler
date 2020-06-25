@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog"
 
@@ -57,9 +56,9 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		klog.Error("Failed to create dynamic client with error:", err)
 		return nil
 	}
-
+	utils.BuildGVKGVRMap(mgr.GetConfig())
 	return &ReconcileApplicationAssembler{Client: mgr.GetClient(), scheme: mgr.GetScheme(),
-		gvkGVRMap: utils.BuildGVKGVRMap(mgr.GetConfig()), dynamicClient: dynamicclient}
+		dynamicClient: dynamicclient}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -107,7 +106,6 @@ type ReconcileApplicationAssembler struct {
 	// that reads objects from the cache and writes to the apiserver
 	client.Client
 	dynamicClient dynamic.Interface
-	gvkGVRMap     map[schema.GroupVersionKind]schema.GroupVersionResource
 	scheme        *runtime.Scheme
 }
 

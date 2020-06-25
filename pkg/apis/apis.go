@@ -16,6 +16,7 @@ package apis
 
 import (
 	sigappapis "github.com/kubernetes-sigs/application/pkg/apis"
+	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	dplapis "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis"
@@ -41,6 +42,11 @@ func AddToScheme(s *runtime.Scheme) error {
 	}
 
 	err = dplapis.AddToScheme(s)
+	if err != nil {
+		return err
+	}
+
+	err = crds.AddToScheme(s)
 	if err != nil {
 		return err
 	}

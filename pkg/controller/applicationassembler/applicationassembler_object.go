@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,9 +40,15 @@ import (
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(instance *toolsv1alpha1.ApplicationAssembler,
 	objref *corev1.ObjectReference, appID string) error {
-	objgvr, ok := r.gvkGVRMap[objref.GetObjectKind().GroupVersionKind()]
+	objgvr, ok := utils.GVKGVRMap[objref.GetObjectKind().GroupVersionKind()]
 	if !ok {
 		klog.Error("Failed to find GVR for object:", objref.GetObjectKind().GroupVersionKind())
+
+		// requeue , as the crd controller will refresh the GVKGVR map eventually
+		return errors.NewNotFound(schema.GroupResource{
+			Group:    objref.GroupVersionKind().Group,
+			Resource: objref.GroupVersionKind().Kind,
+		}, objref.Name)
 	}
 
 	ucobj, err := r.dynamicClient.Resource(objgvr).Namespace(objref.Namespace).Get(objref.Name, metav1.GetOptions{})
@@ -170,8 +177,17 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 	return nil
 }
 
-func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.Deployer, ucobj *unstructured.Unstructured) *hdplv1alpha1.Deployer {
-	gvr, ok := r.gvkGVRMap[ucobj.GetObjectKind().GroupVersionKind()]
+func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.Deployer, ucobj *unstructured.Unstructured) (*hdplv1alpha1.Deployer, error) {
+	gvr, ok := utils.GVKGVRMap[ucobj.GetObjectKind().GroupVersionKind()]
+	if !ok {
+		klog.Error("Failed to find GVR for object:", ucobj.GetObjectKind().GroupVersionKind())
+
+		// requeue , as the crd controller will refresh the GVKGVR map eventually
+		return nil, errors.NewNotFound(schema.GroupResource{
+			Group:    ucobj.GroupVersionKind().Group,
+			Resource: ucobj.GroupVersionKind().Kind,
+		}, ucobj.GetName())
+	}
 	if ok {
 		for _, hubDeployer := range deployers {
 			// in cluster deployer
@@ -185,7 +201,7 @@ func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.
 								if apiGroup == "*" || apiGroup == utils.StripVersion(ucobj.GetAPIVersion()) {
 									for _, resource := range capability.Resources {
 										if resource == "*" || resource == gvr.Resource {
-											return &hubDeployer
+											return &hubDeployer, nil
 										}
 									}
 								}
@@ -195,10 +211,8 @@ func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.
 				}
 			}
 		}
-	} else {
-		klog.Error("Failed to retrieve GVR for GVK ", ucobj.GetObjectKind().GroupVersionKind())
 	}
-	return nil
+	return nil, nil
 }
 
 func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1alpha1.HybridTemplate,
@@ -209,7 +223,11 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 		klog.Error("Failed to list deployers")
 		return nil, nil, err
 	}
-	deployer := r.selectDeployer(deployerlist.Items, ucobj)
+	deployer, err := r.selectDeployer(deployerlist.Items, ucobj)
+	if err != nil {
+		klog.Error("Error occurred while trying to select a deployer ", err)
+		return nil, nil, err
+	}
 	if deployer == nil {
 		deployer = &hdplv1alpha1.Deployer{}
 		deployer.Spec.Type = toolsv1alpha1.DefaultDeployerType

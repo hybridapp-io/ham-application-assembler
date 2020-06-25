@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	gvkGVRMap         map[schema.GroupVersionKind]schema.GroupVersionResource
+	GVKGVRMap         map[schema.GroupVersionKind]schema.GroupVersionResource
 	resourcePredicate = discovery.SupportsAllVerbs{Verbs: []string{"create", "update", "delete", "list", "watch"}}
 )
 
@@ -63,11 +63,16 @@ func addResourceToMap(rl *metav1.APIResourceList,
 	return resMap
 }
 
-//BuildGVKGVRMap builds a GVK to GVR map
+// BuildGVKGVRMap builds or returns a cached GVK to GVR map
 func BuildGVKGVRMap(config *rest.Config) map[schema.GroupVersionKind]schema.GroupVersionResource {
-	if gvkGVRMap != nil {
-		return gvkGVRMap
+	if GVKGVRMap != nil {
+		return GVKGVRMap
 	}
+	return RebuildGVKGVRMap(config)
+}
+
+// RebuildGVKGVRMap builds a GVK to GVR map from scratch
+func RebuildGVKGVRMap(config *rest.Config) map[schema.GroupVersionKind]schema.GroupVersionResource {
 	resources, err := discovery.NewDiscoveryClientForConfigOrDie(config).ServerPreferredResources()
 	if err != nil {
 		klog.Error("Failed to discover all server resources, continuing with err:", err)
@@ -84,8 +89,8 @@ func BuildGVKGVRMap(config *rest.Config) map[schema.GroupVersionKind]schema.Grou
 		resMap = addResourceToMap(rl, resMap)
 	}
 	//delayed initialization
-	gvkGVRMap = resMap
-	return gvkGVRMap
+	GVKGVRMap = resMap
+	return GVKGVRMap
 }
 
 // StripVersion removes the version part of a GV
