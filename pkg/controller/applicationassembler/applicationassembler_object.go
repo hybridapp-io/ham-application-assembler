@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -193,7 +194,7 @@ func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.
 			// in cluster deployer
 			if hdplv1alpha1utils.IsInClusterDeployer(&hubDeployer) {
 				// cluster vs namespaced scope
-				if hubDeployer.Spec.ClusterScope || hubDeployer.ObjectMeta.Namespace == ucobj.GetNamespace() {
+				if hubDeployer.Spec.Scope == apiextensions.ClusterScoped || hubDeployer.ObjectMeta.Namespace == ucobj.GetNamespace() {
 					if hubDeployer.Spec.Capabilities != nil {
 						for _, capability := range hubDeployer.Spec.Capabilities {
 							// group

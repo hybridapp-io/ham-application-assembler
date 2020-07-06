@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -159,8 +160,8 @@ var (
 			Annotations: map[string]string{hdplv1alpha1.DeployerInCluster: "true"},
 		},
 		Spec: hdplv1alpha1.DeployerSpec{
-			Type:         "foo",
-			ClusterScope: true,
+			Type:  "foo",
+			Scope: apiextensions.ClusterScoped,
 		},
 	}
 )

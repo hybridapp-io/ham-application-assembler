@@ -580,10 +580,8 @@ github.com/helm/helm-2to3 v0.5.1/go.mod h1:AXFpQX2cSQpss+47ROPEeu7Sm4+CRJ1jKWCEQ
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/huandu/xstrings v1.2.0/go.mod h1:DvyZB1rfVYsBIigL8HwpZgxHwXozlTgGqn63UyNX5k4=
-github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200604174359-d9cb7bc1e39a h1:Zjiaw8+q4Lcx4DU11RcADbUGI/l5syXGvKYPJKMazGM=
-github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200604174359-d9cb7bc1e39a/go.mod h1:JmZOvxIvG7gWLSRcPTTOJy1+8HoqDW1Q7YMfQvf61CI=
-github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200605192600-2385a90afd3c h1:jW1IGyNpwzsgeA5tDClfCrvqH7kvvlkECb/qS+wVdQg=
-github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200605192600-2385a90afd3c/go.mod h1:JmZOvxIvG7gWLSRcPTTOJy1+8HoqDW1Q7YMfQvf61CI=
+github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200706225729-3ee5862c03b2 h1:XW+zIrd4qtAT4XDJ6+h8aIVnbX+OU1v6X1XscMwM1G8=
+github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200706225729-3ee5862c03b2/go.mod h1:5a28ywBpS75I2y0d8B7mjnIGpIOtoprPgyYQuOmZ8NM=
 github.com/iancoleman/strcase v0.0.0-20180726023541-3605ed457bf7/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
