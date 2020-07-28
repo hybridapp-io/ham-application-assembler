@@ -46,7 +46,7 @@ This creates a `db2` deployable CR with `deployer-type` annotation in `raleigh` 
 - Start Application Assembler (in another terminal)
     - opertor-sdk must be installed
 
-    - kubeconfig points to a kubernetes cluster with admin privliege
+    - kubeconfig points to a kubernetes cluster with admin privilege
 
 ```shell
 cd "$GOPATH"/src/github.com/hybridapp-io/ham-application-assembler
