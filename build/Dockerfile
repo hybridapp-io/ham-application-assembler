@@ -4,7 +4,6 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.2
 RUN microdnf update -y && rm -rf /var/cache/yum
 
 LABEL   name="quay.io/hybridappio/ham-application-assembler" \
-        vendor="IBM" \
         summary="Hybrid Application Model - Application Assembler Operator" \
         description="Application Assembler generates Application, Deployables and PlacementRules for the Hybrid Application Model"
         
