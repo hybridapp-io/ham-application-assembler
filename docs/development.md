@@ -3,8 +3,8 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Development Guide](#development-guide)
-  - [Prerequisite](#prerequisite)
-  - [Developer quick start](#developer-quick-start)
+    - [Prerequisite](#prerequisite)
+    - [Developer quick start](#developer-quick-start)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

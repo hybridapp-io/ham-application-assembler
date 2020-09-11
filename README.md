@@ -14,8 +14,8 @@
 - [What is the Application Assembler](#what-is-the-application-assembler)
 - [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
 - [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start](#quick-start)
+    - [Prerequisites](#prerequisites)
+    - [Quick Start](#quick-start)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
