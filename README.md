@@ -11,16 +11,35 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Overview](#overview)
-- [Quick Start](#quick-start)
+- [What is the Application Assembler](#what-is-the-application-assembler)
+- [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
+- [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Quick Start](#quick-start)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Overview
+## What is the Application Assembler
 
 Application Assembler generates Application, Deployables and PlacementRule
 
-## Quick Start
+## Community, discussion, contribution, and support
+
+Check the [CONTRIBUTING Doc](CONTRIBUTING.md) for how to contribute to the repo.
+
+## Getting Started
+
+### Prerequisites
+
+- git v2.18+
+- Go v1.13.4+
+- operator-sdk v0.18.0+
+- Kubernetes v1.14+
+- kubectl v1.14+
+
+Check the [Development Doc](docs/development.md) for how to contribute to the repo.
+
+### Quick Start
 
 -----
 
