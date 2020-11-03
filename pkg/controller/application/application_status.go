@@ -130,7 +130,8 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 				klog.Error("Failed to retrieve the list of deployables for GK ", gk)
 				return nil, err
 			}
-			for _, dpl := range dplList.Items {
+			for i := range dplList.Items {
+				dpl := dplList.Items[i]
 				dplTemplate := &unstructured.Unstructured{}
 				err = json.Unmarshal(dpl.Spec.Template.Raw, dplTemplate)
 				if err != nil {

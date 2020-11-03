@@ -187,7 +187,8 @@ func (r *ReconcileApplicationAssembler) selectDeployer(deployers []prulev1alpha1
 		}, ucobj.GetName())
 	}
 	if ok {
-		for _, hubDeployer := range deployers {
+		for i := range deployers {
+			hubDeployer := deployers[i]
 			// in cluster deployer
 			if hdplv1alpha1utils.IsInClusterDeployer(&hubDeployer) {
 				// cluster vs namespaced scope
