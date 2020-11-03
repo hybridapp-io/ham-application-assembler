@@ -3,14 +3,13 @@ module github.com/hybridapp-io/ham-application-assembler
 go 1.13
 
 require (
-	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20201001171709-09fe74f37526
+	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20201103184739-393bdf95ab1b
 	github.com/hybridapp-io/ham-placement v0.0.0-20201028202429-ccc09cf8eb2b
 	github.com/kubernetes-sigs/application v0.8.1
 	github.com/onsi/gomega v1.9.0
 	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200721140654-267157672e39
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.0.1-2020-05-28-18-29-00.0.20200603172904-efde26079087
 	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-12-21-17-19.0.20200721224621-79fd9d450d82
-
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/prometheus/common v0.9.1
 	github.com/spf13/pflag v1.0.5
