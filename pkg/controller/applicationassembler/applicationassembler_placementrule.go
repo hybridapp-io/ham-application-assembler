@@ -22,17 +22,34 @@ import (
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1alpha1.Deployable, deployerType *string) error {
+func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1alpha1.Deployable, deployerType *string,
+	cluster *types.NamespacedName) error {
 
 	key := types.NamespacedName{Namespace: hdpl.Namespace, Name: hdpl.Name}
 
 	prule := &prulev1alpha1.PlacementRule{}
 	if deployerType != nil {
 		prule.Spec.DeployerType = deployerType
+	}
+	if cluster != nil {
+		managedCluster := &clusterv1alpha1.Cluster{}
+		if err := r.Get(context.TODO(), *cluster, managedCluster); err != nil {
+			klog.Error("Cannot find managed cluster ", cluster.String())
+			return err
+		}
+		clusterManagedObject := corev1.ObjectReference{
+			Name:       managedCluster.Name,
+			Namespace:  managedCluster.Namespace,
+			APIVersion: managedCluster.APIVersion,
+		}
+		prule.Spec.Targets = make([]corev1.ObjectReference, 1)
+		prule.Spec.Targets[0] = clusterManagedObject
+
 	}
 	hdpl.Spec.Placement = &hdplv1alpha1.HybridPlacement{}
 

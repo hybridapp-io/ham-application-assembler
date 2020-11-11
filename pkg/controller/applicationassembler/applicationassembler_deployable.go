@@ -85,10 +85,11 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		klog.Error("Failed to patch deployable : ", dpl.Namespace+"/"+dpl.Name, " with error: ", err)
 		return err
 	}
-	return r.buildHybridDeployable(hdpl, dpl, appID)
+	return r.buildHybridDeployable(hdpl, dpl, appID, cluster)
 }
 
-func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1.Deployable, dpl *dplv1.Deployable, appID string) error {
+func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1.Deployable, dpl *dplv1.Deployable,
+	appID string, cluster *types.NamespacedName) error {
 
 	newtpl := &hdplv1alpha1.HybridTemplate{}
 	newtpl.DeployerType = hdplv1alpha1.DefaultDeployerType
@@ -118,7 +119,7 @@ func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1
 
 	hdpl.Spec.HybridTemplates = htpls
 
-	err := r.genPlacementRuleForHybridDeployable(hdpl, nil)
+	err := r.genPlacementRuleForHybridDeployable(hdpl, nil, cluster)
 	if err != nil {
 		klog.Error("Failed to generate placementrule for hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
 		return err

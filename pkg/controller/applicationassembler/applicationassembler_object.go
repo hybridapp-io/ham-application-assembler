@@ -96,7 +96,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	hdpl.Spec.HybridTemplates = htpls
-	err = r.genPlacementRuleForHybridDeployable(hdpl, &deployer.Spec.Type)
+	err = r.genPlacementRuleForHybridDeployable(hdpl, &deployer.Spec.Type, nil)
 	if err != nil {
 		klog.Error("Failed to generate placementrule for hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
 		return err
@@ -157,7 +157,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		}
 		hdpl.Annotations = dpl.Annotations
 
-		return r.buildHybridDeployable(hdpl, dpl, appID)
+		return r.buildHybridDeployable(hdpl, dpl, appID, cluster)
 	}
 
 	labels := hdpl.GetLabels()

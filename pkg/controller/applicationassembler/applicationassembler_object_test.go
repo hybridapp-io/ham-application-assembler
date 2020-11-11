@@ -192,18 +192,34 @@ func TestHubComponents(t *testing.T) {
 
 	svc := service.DeepCopy()
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svc)
+	defer func() {
+		g.Expect(c.Delete(context.TODO(), svc)).NotTo(HaveOccurred())
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssembler1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	hybrddplyblKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), hybrddplybl)
 }
 
 func TestHubComponentsAnnotations(t *testing.T) {
@@ -237,7 +253,22 @@ func TestHubComponentsAnnotations(t *testing.T) {
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance1 := applicationAssembler1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance1)
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance1)).NotTo(HaveOccurred())
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest1)))
 
 	app1 := &sigappv1beta1.Application{}
@@ -246,7 +277,22 @@ func TestHubComponentsAnnotations(t *testing.T) {
 
 	instance2 := applicationAssembler2.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance2)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance2)
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance2)).NotTo(HaveOccurred())
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest2)))
 
 	app2 := &sigappv1beta1.Application{}
@@ -256,7 +302,6 @@ func TestHubComponentsAnnotations(t *testing.T) {
 	hybrddplyblKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), hybrddplybl)
 
 	labels := hybrddplybl.Labels
 	g.Expect(labels[toolsv1alpha1.LabelApplicationPrefix+string(app1.GetUID())]).To(Equal(string(app1.GetUID())))
@@ -309,14 +354,28 @@ func TestHubComponentsPlacementBySingleDeployer(t *testing.T) {
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssemblerHub.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	svcHdplKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
 	svcHdpl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), svcHdplKey, svcHdpl)).NotTo(HaveOccurred())
 	g.Expect(svcHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
-	defer c.Delete(context.TODO(), svcHdpl)
 
 	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
 	stsHdpl := &hdplv1alpha1.Deployable{}
@@ -326,7 +385,6 @@ func TestHubComponentsPlacementBySingleDeployer(t *testing.T) {
 	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(fooDeployer.Spec.Type))
 
 	g.Expect(stsHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
-	defer c.Delete(context.TODO(), stsHdpl)
 
 }
 
@@ -388,7 +446,22 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssemblerHub.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	svcHdplKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
@@ -399,7 +472,6 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 	g.Expect(svcHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(svcDeployer.Spec.Type))
 
 	g.Expect(svcHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
-	defer c.Delete(context.TODO(), svcHdpl)
 
 	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
 	stsHdpl := &hdplv1alpha1.Deployable{}
@@ -409,7 +481,6 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(stsDeployer.Spec.Type))
 
 	g.Expect(stsHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
-	defer c.Delete(context.TODO(), stsHdpl)
 
 }
 
@@ -471,7 +542,22 @@ func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssemblerHub.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	svcHdplKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
@@ -481,17 +567,12 @@ func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
 	g.Expect(svcHdpl.Spec.HybridTemplates).To(HaveLen(1))
 	g.Expect(svcHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(toolsv1alpha1.DefaultDeployerType))
 
-	defer c.Delete(context.TODO(), svcHdpl)
-
 	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
 	stsHdpl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), stsHdplKey, stsHdpl)).NotTo(HaveOccurred())
 
 	g.Expect(stsHdpl.Spec.HybridTemplates).To(HaveLen(1))
 	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(toolsv1alpha1.DefaultDeployerType))
-
-	defer c.Delete(context.TODO(), stsHdpl)
-
 }
 
 func TestComponentsNameLength(t *testing.T) {
@@ -526,7 +607,22 @@ func TestComponentsNameLength(t *testing.T) {
 	instance1 := applicationAssembler1.DeepCopy()
 	instance1.Spec.HubComponents[0].Name = newLongName
 	g.Expect(c.Create(context.TODO(), instance1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance1)
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance1)).NotTo(HaveOccurred())
+	}()
 	g.Eventually(requests, timeout).Should(Receive())
 
 	hdplName := utils.TruncateString("service-"+service.Namespace+"-"+newLongName, toolsv1alpha1.GeneratedDeployableNameLength)
@@ -534,6 +630,4 @@ func TestComponentsNameLength(t *testing.T) {
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
 	g.Expect(hybrddplybl.Name).To(HaveLen(toolsv1alpha1.GeneratedDeployableNameLength))
-	defer c.Delete(context.TODO(), hybrddplybl)
-
 }

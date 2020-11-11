@@ -21,24 +21,48 @@ import (
 	. "github.com/onsi/gomega"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
-
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 )
 
-func TestCreateDeployables(t *testing.T) {
+func TestHPRTargets(t *testing.T) {
 	g := NewWithT(t)
 
 	var (
+		mc1Name = "mc1"
+		mc1NS   = &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: mc1Name,
+			},
+		}
+		mc1 = &clusterv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      mc1Name,
+				Namespace: mc1Name,
+			},
+		}
+
+		mc2Name = "mc2"
+		mc2NS   = &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: mc2Name,
+			},
+		}
+		mc2 = &clusterv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      mc2Name,
+				Namespace: mc2Name,
+			},
+		}
+
 		mcServiceName = "mysql-svc-mc"
 		mcService     = corev1.Service{
 			TypeMeta: metav1.TypeMeta{
@@ -52,10 +76,11 @@ func TestCreateDeployables(t *testing.T) {
 		}
 
 		applicationAssemblerKey = types.NamespacedName{
-			Name:      "foo-app",
+			Name:      "hpr",
 			Namespace: "default",
 		}
 
+		// assembler with components in two managed clusters
 		applicationAssembler = &toolsv1alpha1.ApplicationAssembler{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      applicationAssemblerKey.Name,
@@ -64,7 +89,18 @@ func TestCreateDeployables(t *testing.T) {
 			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
 				ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
 					{
-						Cluster: mc.Namespace + "/" + mc.Name,
+						Cluster: mc1.Namespace + "/" + mc1.Name,
+						Components: []*corev1.ObjectReference{
+							{
+								APIVersion: mcService.APIVersion,
+								Kind:       mcService.Kind,
+								Name:       mcService.Name,
+								Namespace:  mcService.Namespace,
+							},
+						},
+					},
+					{
+						Cluster: mc2.Namespace + "/" + mc2.Name,
 						Components: []*corev1.ObjectReference{
 							{
 								APIVersion: mcService.APIVersion,
@@ -100,6 +136,25 @@ func TestCreateDeployables(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
+	g.Expect(c.Create(context.TODO(), mc1NS)).To(Succeed())
+	g.Expect(c.Create(context.TODO(), mc2NS)).To(Succeed())
+
+	g.Expect(c.Create(context.TODO(), mc1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), mc1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	g.Expect(c.Create(context.TODO(), mc2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), mc2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssembler.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
@@ -118,16 +173,11 @@ func TestCreateDeployables(t *testing.T) {
 		}
 		// cleanup the appasm
 		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
-
 	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
-
-	hybrddplyblKey := types.NamespacedName{Name: mc.Name + "-service-" + mcService.Namespace + "-" + mcService.Name, Namespace: applicationAssemblerKey.Namespace}
-
-	nameLabel := map[string]string{
-		hdplv1alpha1.HostingHybridDeployable: hybrddplyblKey.Name,
-	}
-	dplList := &dplv1.DeployableList{}
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(nameLabel))})).NotTo(HaveOccurred())
-	g.Expect(dplList.Items).To(HaveLen(0))
+	hprList := &prulev1alpha1.PlacementRuleList{}
+	g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+	g.Expect(hprList.Items).To(HaveLen(2))
+	g.Expect(hprList.Items[0].Spec.Targets).To(HaveLen(1))
+	g.Expect(hprList.Items[1].Spec.Targets).To(HaveLen(1))
 }
