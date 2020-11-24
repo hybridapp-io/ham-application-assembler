@@ -270,6 +270,7 @@ func (r *ReconcileApplicationAssembler) prepareTemplate(template *unstructured.U
 	template.SetResourceVersion("")
 	template.SetGeneration(0)
 	template.SetCreationTimestamp(metav1.Time{})
+	template.SetManagedFields(nil)
 
 	annotations := template.GetAnnotations()
 	if annotations != nil {

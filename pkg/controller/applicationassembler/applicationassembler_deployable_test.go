@@ -16,6 +16,7 @@ package applicationassembler
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -24,8 +25,11 @@ import (
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -130,4 +134,139 @@ func TestCreateDeployables(t *testing.T) {
 	dplList := &dplv1.DeployableList{}
 	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(nameLabel))})).NotTo(HaveOccurred())
 	g.Expect(dplList.Items).To(HaveLen(0))
+}
+
+func TestDeployableTemplates(t *testing.T) {
+	g := NewWithT(t)
+
+	var (
+		mcServiceName = "mysql-svc-mc"
+		mcService     = corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Service",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      mcServiceName,
+				Namespace: "default",
+			},
+		}
+		mcServiceDeployable = &dplv1.Deployable{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      mcServiceName,
+				Namespace: mcName,
+				Annotations: map[string]string{
+					hdplv1alpha1.AnnotationHybridDiscovery: "true",
+				},
+			},
+			Spec: dplv1.DeployableSpec{
+				Template: &runtime.RawExtension{
+					Object: &mcService,
+				},
+			},
+		}
+
+		applicationAssemblerKey = types.NamespacedName{
+			Name:      "foo-app",
+			Namespace: "default",
+		}
+
+		applicationAssembler = &toolsv1alpha1.ApplicationAssembler{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      applicationAssemblerKey.Name,
+				Namespace: applicationAssemblerKey.Namespace,
+			},
+			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
+				ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
+					{
+						Cluster: mc.Namespace + "/" + mc.Name,
+						Components: []*corev1.ObjectReference{
+							{
+								APIVersion: mcServiceDeployable.APIVersion,
+								Kind:       mcServiceDeployable.Kind,
+								Name:       mcServiceDeployable.Name,
+								Namespace:  mcServiceDeployable.Namespace,
+							},
+						},
+					},
+				},
+			},
+		}
+	)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	dpl1 := mcServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance := applicationAssembler.DeepCopy()
+	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
+	defer func() {
+		// cleanup hdpl
+		dplList := &hdplv1alpha1.DeployableList{}
+		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
+		for _, hdpl := range dplList.Items {
+			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
+		}
+		// cleanup hpr
+		hprList := &prulev1alpha1.PlacementRuleList{}
+		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
+		for _, hpr := range hprList.Items {
+			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
+		}
+		// cleanup the appasm
+		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
+
+	}()
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+	hybrddplyblKey := types.NamespacedName{Name: mc.Name + "-service-" + mcService.Namespace + "-" + mcService.Name, Namespace: applicationAssemblerKey.Namespace}
+
+	hdpl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hdpl)).NotTo(HaveOccurred())
+
+	// validate the template attributes
+	obj := &unstructured.Unstructured{}
+	err = json.Unmarshal(hdpl.Spec.HybridTemplates[0].Template.Raw, obj)
+	if err != nil {
+		klog.Error(err)
+		t.Fail()
+	}
+
+	mcServiceInTemplate := &corev1.Service{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, mcServiceInTemplate)
+	if err != nil {
+		klog.Error(err)
+		t.Fail()
+	}
+
+	g.Expect(mcServiceInTemplate.UID).To(BeEmpty())
+	g.Expect(mcServiceInTemplate.ManagedFields).To(BeNil())
+	g.Expect(mcServiceInTemplate.SelfLink).To(BeEmpty())
+	g.Expect(mcServiceInTemplate.ResourceVersion).To(BeEmpty())
 }

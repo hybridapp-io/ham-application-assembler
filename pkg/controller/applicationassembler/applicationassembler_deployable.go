@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 
@@ -99,7 +100,9 @@ func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1
 		newtpl.DeployerType = annotations[hdplv1alpha1.DeployerType]
 	}
 
-	newtpl.Template = dpl.Spec.Template
+	newtpl.Template = &runtime.RawExtension{}
+
+	newtpl.Template = r.trimDeployableTemplate(dpl.Spec.Template)
 
 	labels := hdpl.GetLabels()
 	if labels == nil {
@@ -139,4 +142,21 @@ func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1
 
 	return nil
 
+}
+
+func (r *ReconcileApplicationAssembler) trimDeployableTemplate(template *runtime.RawExtension) *runtime.RawExtension {
+	if template.Raw == nil {
+		return template
+	}
+	obj := &unstructured.Unstructured{}
+	err := json.Unmarshal(template.Raw, obj)
+	if err != nil {
+		klog.Error("Failed to unmarshal object:\n", string(template.Raw), " with error ", err)
+		return template
+	}
+
+	r.prepareTemplate(obj)
+	newHybridTemplate := template.DeepCopy()
+	newHybridTemplate.Object = obj
+	return newHybridTemplate
 }
