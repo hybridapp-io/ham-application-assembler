@@ -228,6 +228,7 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 		return nil, nil, err
 	}
 	if deployer == nil {
+		klog.Info("Could not find an explicit deployer for object ", ucobj.GetName(), ". Proceeding with the implicit (kubernetes) deployer.")
 		deployer = &prulev1alpha1.Deployer{}
 		deployer.Spec.Type = toolsv1alpha1.DefaultDeployerType
 		deployer.Name = toolsv1alpha1.DefaultDeployerType
