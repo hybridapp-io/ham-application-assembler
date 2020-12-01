@@ -20,6 +20,7 @@ import (
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,6 +71,14 @@ func (r *ReconcileApplication) locateAppDeployable(appKey types.NamespacedName, 
 // Each managed cluster namespace will have its own app deployable which will be in charge
 // of discovering the app components in that respective managed cluster
 func (r *ReconcileApplication) reconcileAppDeployables(app *sigappv1beta1.Application) error {
+	if app.Annotations[toolsv1alpha1.AnnotationDiscoveryTarget] != "" {
+		return r.reconcileAppDeployableOnTarget(app)
+	}
+	// default discover across all managed clusters
+	return r.reconcileAppDeployableOnAllTargets(app)
+}
+
+func (r *ReconcileApplication) reconcileAppDeployableOnAllTargets(app *sigappv1beta1.Application) error {
 
 	// retrieve a list of clusters
 	clusterList := &clusterv1alpha1.ClusterList{}
@@ -93,6 +102,43 @@ func (r *ReconcileApplication) reconcileAppDeployables(app *sigappv1beta1.Applic
 				klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
 				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+func (r *ReconcileApplication) reconcileAppDeployableOnTarget(app *sigappv1beta1.Application) error {
+
+	targetJSON := app.Annotations[toolsv1alpha1.AnnotationDiscoveryTarget]
+	targetObjectReference := &corev1.ObjectReference{}
+
+	if err := json.Unmarshal([]byte(targetJSON), targetObjectReference); err != nil {
+		klog.Error("Unable to unmarshal the value of the annotation ", toolsv1alpha1.AnnotationDiscoveryTarget, " with error: ", err)
+		return err
+	}
+	cluster := &clusterv1alpha1.Cluster{}
+	if (targetObjectReference.Kind != "" && targetObjectReference.Kind != cluster.Kind) ||
+		(targetObjectReference.APIVersion != "" && targetObjectReference.APIVersion != cluster.APIVersion) {
+		klog.Error("Unsupported target kind ", targetObjectReference.Kind, " and version ", targetObjectReference.APIVersion)
+		return nil
+	}
+	cluster.Name = targetObjectReference.Name
+	cluster.Namespace = targetObjectReference.Namespace
+
+	ignored := false
+	for _, clObjRef := range toolsv1alpha1.ClustersIgnoredForDiscovery {
+		if clObjRef.Name == cluster.Name && clObjRef.Namespace == cluster.Namespace {
+			ignored = true
+			break
+		}
+	}
+	// process only clusters which are not in the ignored list
+	if !ignored {
+		err := r.reconcileAppDeployable(app, cluster.Namespace)
+		if err != nil {
+			klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
+			return err
 		}
 	}
 

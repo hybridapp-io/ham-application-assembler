@@ -16,10 +16,13 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	. "github.com/onsi/gomega"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -186,4 +189,81 @@ func TestApplicationDeployableIgnoredClusters(t *testing.T) {
 	newList := &dplv1.DeployableList{}
 	g.Expect(c.List(context.TODO(), newList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
 	g.Expect(newList.Items).To(HaveLen(0))
+}
+
+func TestApplicationDeployableTarget(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure
+	cl1 := mc1.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), cl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+	cl1ObjReference := corev1.ObjectReference{
+		Name:       cl1.Name,
+		Namespace:  cl1.Namespace,
+		Kind:       cl1.Kind,
+		APIVersion: cl1.APIVersion,
+	}
+	cl2 := mc2.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), cl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	targetJSON, err := json.Marshal(cl1ObjReference)
+	if err != nil {
+		klog.Error(err)
+		t.Fail()
+	}
+
+	// Create the Application object and expect the Reconcile and Deployable to be created
+	app := application.DeepCopy()
+	app.Annotations[toolsv1alpha1.AnnotationDiscoveryTarget] = string(targetJSON)
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	dplList := &dplv1.DeployableList{}
+	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
+	g.Expect(dplList.Items).To(HaveLen(1))
+
+	g.Expect(dplList.Items[0].Namespace).To(Equal(cl1.Namespace))
+
 }

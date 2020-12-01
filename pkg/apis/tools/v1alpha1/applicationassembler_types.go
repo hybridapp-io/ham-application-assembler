@@ -27,6 +27,9 @@ var (
 	// AnnotationCreateAssembler defines the annotation used to indicate whether the discovery process should also create an application assembler CR.
 	AnnotationCreateAssembler = SchemeGroupVersion.Group + "/hybrid-discovery-create-assembler"
 
+	// AnnotationDiscoveryTarget defines the annotation used to provide a specific discovery target
+	AnnotationDiscoveryTarget = SchemeGroupVersion.Group + "/hybrid-discovery-target"
+
 	// LabelApplicationPrefix defines the label prefix used as component selector
 	LabelApplicationPrefix = SchemeGroupVersion.Group + "/application-"
 
