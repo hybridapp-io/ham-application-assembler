@@ -97,3 +97,4 @@ bin
 build-harness
 build/_output
 .DS_Store
+.go/
