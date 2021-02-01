@@ -97,7 +97,7 @@ func TestDiscoveredComponentsInSameNamespace(t *testing.T) {
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	// the two services should now be in the app status
+	// 0 resources should now be in the app status
 	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
 	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(0))
 

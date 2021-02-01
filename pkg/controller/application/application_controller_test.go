@@ -177,18 +177,19 @@ var (
 
 	// application
 	applicationKey = types.NamespacedName{
-		Name:      "wordpress",
+		Name:      appName,
 		Namespace: "default",
 	}
 
 	applicationKey2 = types.NamespacedName{
-		Name:      "wordpress",
-		Namespace: "mc1",
+		Name:      appName,
+		Namespace: mc1Name,
 	}
+
 	application2 = &sigappv1beta1.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      appName,
-			Namespace: "mc1",
+			Namespace: mc1Name,
 			Labels:    selectorLabels,
 			Annotations: map[string]string{
 				hdplv1alpha1.AnnotationHybridDiscovery: hdplv1alpha1.HybridDiscoveryEnabled,
