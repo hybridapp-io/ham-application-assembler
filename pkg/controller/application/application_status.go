@@ -103,7 +103,7 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 			// if selector is not provided, no components will be fetched
 			if app.Spec.Selector != nil {
 				if app.Spec.Selector.MatchLabels != nil {
-					if list, err = r.dynamicClient.Resource(mapping.Resource).List(context.TODO(), metav1.ListOptions{
+					if list, err = r.dynamicClient.Resource(mapping.Resource).Namespace(app.Namespace).List(context.TODO(), metav1.ListOptions{
 						LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).String(),
 					}); err != nil {
 						klog.Error("Failed to retrieve the list of resources for GK ", gk)
@@ -151,10 +151,12 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 				if (mapping != nil && dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping)) ||
 					(mapping == nil && dplTemplate.GetKind() == gk.Kind && utils.StripVersion(dplTemplate.GetAPIVersion()) == gk.Group) {
 
+					// if dplTemplate.GetNamespace() == app.ObjectMeta.Namespace {}
 					ucMap, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&dpl)
 					ucObj := &unstructured.Unstructured{}
 					ucObj.SetUnstructuredContent(ucMap)
 					resources = append(resources, ucObj)
+
 				}
 			}
 		}

@@ -78,6 +78,16 @@ var (
 		},
 	}
 
+	mc1ServicePort = corev1.ServicePort{
+		Name: "mc1-service-port",
+		Port: 8080,
+	}
+
+	mc2ServicePort = corev1.ServicePort{
+		Name: "mc2-service-port",
+		Port: 8080,
+	}
+
 	mc1Service = corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -85,9 +95,14 @@ var (
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mc1ServiceName,
-			Namespace: mc1ServiceName,
+			Namespace: mc1Name,
 			Labels: map[string]string{
 				selectorName: appName,
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				mc1ServicePort,
 			},
 		},
 	}
@@ -129,6 +144,11 @@ var (
 				selectorName: appName,
 			},
 		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				mc2ServicePort,
+			},
+		},
 	}
 	mc2ServiceDeployable = &dplv1.Deployable{
 		ObjectMeta: metav1.ObjectMeta{
@@ -159,6 +179,38 @@ var (
 	applicationKey = types.NamespacedName{
 		Name:      "wordpress",
 		Namespace: "default",
+	}
+
+	applicationKey2 = types.NamespacedName{
+		Name:      "wordpress",
+		Namespace: "mc1",
+	}
+	application2 = &sigappv1beta1.Application{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: "mc1",
+			Labels:    selectorLabels,
+			Annotations: map[string]string{
+				hdplv1alpha1.AnnotationHybridDiscovery: hdplv1alpha1.HybridDiscoveryEnabled,
+			},
+		},
+		Spec: sigappv1beta1.ApplicationSpec{
+			ComponentGroupKinds: []metav1.GroupKind{
+				{
+					Group: "v1",
+					Kind:  "Service",
+				},
+				{
+					Group: "apps",
+					Kind:  "StatefulSet",
+				},
+			},
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					selectorName: appName,
+				},
+			},
+		},
 	}
 
 	application = &sigappv1beta1.Application{

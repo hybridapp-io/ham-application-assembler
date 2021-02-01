@@ -29,6 +29,96 @@ import (
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 )
 
+func TestDiscoveredComponentsInSameNamespace(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+	var expectedRequest2 = reconcile.Request{NamespacedName: applicationKey2}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+
+	recFn, requests := SetupTestReconcile(rec)
+
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+
+	svc1 := mc1Service.DeepCopy()
+
+	g.Expect(c.Create(context.TODO(), svc1)).NotTo(HaveOccurred())
+
+	defer func() {
+		if err = c.Delete(context.TODO(), svc1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	svc2 := mc2Service.DeepCopy()
+
+	g.Expect(c.Create(context.Background(), svc2)).NotTo(HaveOccurred())
+
+	defer func() {
+		if err = c.Delete(context.Background(), svc2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// Create the Application object and expect the deployables
+
+	app := application.DeepCopy()
+
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	// the two services should now be in the app status
+	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
+	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(0))
+
+	app2 := application2.DeepCopy()
+
+	g.Expect(c.Create(context.TODO(), app2)).NotTo(HaveOccurred())
+
+	defer func() {
+		if err = c.Delete(context.TODO(), app2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	//wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest2)))
+	g.Expect(c.Get(context.TODO(), applicationKey2, app2)).NotTo(HaveOccurred())
+
+	g.Expect(app2.Status.ComponentList.Objects).To(HaveLen(1))
+}
+
 func TestDiscoveredComponentsWithLabelSelector(t *testing.T) {
 	g := NewWithT(t)
 
