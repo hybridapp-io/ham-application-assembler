@@ -486,7 +486,6 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/huandu/xstrings v1.3.1/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/hybridapp-io/ham-deployable-operator v0.0.0-20201103184739-393bdf95ab1b h1:JBqDAvS2kcRBNWT1VG0c5hVdzs2M42+BA85lvJdDRNU=
 github.com/hybridapp-io/ham-deployable-operator v0.0.0-20201103184739-393bdf95ab1b/go.mod h1:9IpHd+c8Vxlc4k01g8lINIUzO4zSKqKLovOg9aEjVG4=
-github.com/hybridapp-io/ham-deployable-operator v0.0.1 h1:bix2HO25PX+h+VuG7t+vGFmqx2+pCOpNcgJma+RKNUo=
 github.com/hybridapp-io/ham-placement v0.0.0-20200930154109-0cc75e4d1c3e h1:eUZ+jI0XU9rjVJywoEM8AO3i6WRDBqSbfr3GroTGIVo=
 github.com/hybridapp-io/ham-placement v0.0.0-20200930154109-0cc75e4d1c3e/go.mod h1:aPeYFL2/PGrH1HpLOqfSfGzwNaBvmCejUXVxkzZYdFk=
 github.com/hybridapp-io/ham-placement v0.0.0-20201028202429-ccc09cf8eb2b h1:bK/sC2RhZ0K+C5xh336dW4cipNgf++vQ6MLK1AmovNc=
