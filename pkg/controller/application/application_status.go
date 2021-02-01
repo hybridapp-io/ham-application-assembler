@@ -151,7 +151,6 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 				if (mapping != nil && dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping)) ||
 					(mapping == nil && dplTemplate.GetKind() == gk.Kind && utils.StripVersion(dplTemplate.GetAPIVersion()) == gk.Group) {
 
-					// if dplTemplate.GetNamespace() == app.ObjectMeta.Namespace {}
 					ucMap, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&dpl)
 					ucObj := &unstructured.Unstructured{}
 					ucObj.SetUnstructuredContent(ucMap)
