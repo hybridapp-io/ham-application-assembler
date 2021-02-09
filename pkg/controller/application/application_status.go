@@ -24,11 +24,14 @@ import (
 
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
@@ -52,6 +55,27 @@ var (
 		Kind:    "Application",
 	}
 )
+
+type Relationship struct {
+	Label         string
+	Source        string
+	SourceCluster string
+	/*
+			sourceNamespace": "namespace_name",
+			sourceApiGroup": "xxx",
+			sourceApiVersion": "yyy",
+			sourceKind": "kind_value",
+			sourceName": "resource_name",
+			dest": "k8s",
+			destCluster": "cluster_name",
+			destNamespace": "namespace_name",
+			destApiGroup": "xxx",
+			destApiVersion": "yyy",
+		"destKind": "kind_value",
+			"destName": "resource_name"
+			Phase          ApplicationAssemblerPhase `json:"phase"`
+	*/
+}
 
 func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Application) bool {
 	if _, enabled := app.GetAnnotations()[hdplv1alpha1.AnnotationHybridDiscovery]; !enabled ||
@@ -200,6 +224,29 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 	// update the app status
 	err = r.Status().Update(context.TODO(), app)
 
+	// Build configmap of resources related to application
+	// Configmap will have same name and namespace as associated application
+	// Update existing configmap or else create new
+	relatedResources, err := r.buildResourceMap(app)
+
+	configmapKey := types.NamespacedName{
+		Name:      app.GetName(),
+		Namespace: app.GetNamespace(),
+	}
+	err = r.Get(context.TODO(), configmapKey, &corev1.ConfigMap{})
+	// Create the configmap if not existing
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.Create(context.TODO(), relatedResources)
+
+			return err
+		}
+		return err
+	}
+
+	// Update existing configmap
+	err = r.Update(context.TODO(), relatedResources)
+
 	return err
 }
 
@@ -236,4 +283,33 @@ func (r *ReconcileApplication) objectsDeepEquals(oldStatus []sigappv1beta1.Objec
 		return matchedOld == len(oldStatus)
 	}
 	return false
+}
+
+// TODO: complete this function
+func (r *ReconcileApplication) buildResourceMap(app *sigappv1beta1.Application) (*corev1.ConfigMap, error) {
+
+	relationships := []Relationship{
+		Relationship{
+			Label:         "uses",
+			Source:        "k8s",
+			SourceCluster: "local-cluster",
+		},
+	}
+	relationshipsByteArray, err := json.Marshal(relationships)
+	if err != nil {
+		klog.Info("Failed to marshal object with error", err)
+		return nil, err
+	}
+
+	resourceMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      app.Name,
+			Namespace: app.Namespace,
+		},
+		BinaryData: map[string][]byte{
+			"relationships": relationshipsByteArray,
+		},
+	}
+
+	return resourceMap, nil
 }

@@ -241,6 +241,13 @@ var (
 			},
 		},
 	}
+
+	configMap = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: "default",
+		},
+	}
 )
 
 func TestReconcile(t *testing.T) {
