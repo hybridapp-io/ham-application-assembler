@@ -471,7 +471,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	}
 
 	// check that configmap was created
-	resourcesMap := configMap.DeepCopy()
-	resourcesMap.Reset()
-	g.Expect(c.Get(context.TODO(), applicationKey, resourcesMap)).NotTo(HaveOccurred())
+	relationshipsConfigmap := configMap.DeepCopy()
+	relationshipsConfigmap.Reset()
+	g.Expect(c.Get(context.TODO(), applicationKey, relationshipsConfigmap)).NotTo(HaveOccurred())
 }

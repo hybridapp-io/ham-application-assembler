@@ -57,24 +57,21 @@ var (
 )
 
 type Relationship struct {
-	Label         string
-	Source        string
-	SourceCluster string
-	/*
-			sourceNamespace": "namespace_name",
-			sourceApiGroup": "xxx",
-			sourceApiVersion": "yyy",
-			sourceKind": "kind_value",
-			sourceName": "resource_name",
-			dest": "k8s",
-			destCluster": "cluster_name",
-			destNamespace": "namespace_name",
-			destApiGroup": "xxx",
-			destApiVersion": "yyy",
-		"destKind": "kind_value",
-			"destName": "resource_name"
-			Phase          ApplicationAssemblerPhase `json:"phase"`
-	*/
+	Label            string `json:"label"`
+	Source           string `json:"source"`
+	SourceCluster    string `json:"sourceCluster"`
+	SourceNamespace  string `json:"sourceNamespace"`
+	SourceApiGroup   string `json:"sourceApiGroup"`
+	SourceApiVersion string `json:"sourceApiVersion"`
+	SourceKind       string `json:"sourceKind"`
+	SourceName       string `json:"sourceName"`
+	Dest             string `json:"dest"`
+	DestCluster      string `json:"destCluster"`
+	DestNamespace    string `json:"destNamespace"`
+	DestApiGroup     string `json:"destApiGroup"`
+	DestApiVersion   string `json:"destApiVersion"`
+	DestKind         string `json:"destKind"`
+	DestName         string `json:"destName"`
 }
 
 func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Application) bool {
@@ -227,7 +224,7 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 	// Build configmap of resources related to application
 	// Configmap will have same name and namespace as associated application
 	// Update existing configmap or else create new
-	relatedResources, err := r.buildResourceMap(app)
+	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app)
 
 	configmapKey := types.NamespacedName{
 		Name:      app.GetName(),
@@ -237,7 +234,7 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 	// Create the configmap if not existing
 	if err != nil {
 		if errors.IsNotFound(err) {
-			err = r.Create(context.TODO(), relatedResources)
+			err = r.Create(context.TODO(), relationshipsConfigmap)
 
 			return err
 		}
@@ -245,7 +242,7 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 	}
 
 	// Update existing configmap
-	err = r.Update(context.TODO(), relatedResources)
+	err = r.Update(context.TODO(), relationshipsConfigmap)
 
 	return err
 }
@@ -286,13 +283,25 @@ func (r *ReconcileApplication) objectsDeepEquals(oldStatus []sigappv1beta1.Objec
 }
 
 // TODO: complete this function
-func (r *ReconcileApplication) buildResourceMap(app *sigappv1beta1.Application) (*corev1.ConfigMap, error) {
+func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Application) (*corev1.ConfigMap, error) {
 
 	relationships := []Relationship{
 		Relationship{
-			Label:         "uses",
-			Source:        "k8s",
-			SourceCluster: "local-cluster",
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  app.GetNamespace(),
+			SourceApiGroup:   app.GroupVersionKind().Group,
+			SourceApiVersion: app.GroupVersionKind().Version,
+			SourceKind:       "application",
+			SourceName:       app.GetName(),
+			Dest:             "",
+			DestCluster:      "",
+			DestNamespace:    "",
+			DestApiGroup:     "",
+			DestApiVersion:   "",
+			DestKind:         "",
+			DestName:         "",
 		},
 	}
 	relationshipsByteArray, err := json.Marshal(relationships)
@@ -300,16 +309,14 @@ func (r *ReconcileApplication) buildResourceMap(app *sigappv1beta1.Application) 
 		klog.Info("Failed to marshal object with error", err)
 		return nil, err
 	}
-
-	resourceMap := &corev1.ConfigMap{
+	relationshipsMap := map[string]string{"relationships": string(relationshipsByteArray)}
+	relationshipsConfigmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      app.Name,
 			Namespace: app.Namespace,
 		},
-		BinaryData: map[string][]byte{
-			"relationships": relationshipsByteArray,
-		},
+		Data: relationshipsMap,
 	}
 
-	return resourceMap, nil
+	return relationshipsConfigmap, nil
 }
