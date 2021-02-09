@@ -16,6 +16,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -470,8 +471,43 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 		g.Expect(comp).To(BeElementOf(components))
 	}
 
-	// check that configmap was created
+	// Check that configmap was created
 	relationshipsConfigmap := configMap.DeepCopy()
 	relationshipsConfigmap.Reset()
 	g.Expect(c.Get(context.TODO(), applicationKey, relationshipsConfigmap)).NotTo(HaveOccurred())
+
+	// Verify if all relationships exist
+	expectedRelationships := []Relationship{
+		Relationship{
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  app.GetNamespace(),
+			SourceApiGroup:   app.GroupVersionKind().Group,
+			SourceApiVersion: app.GroupVersionKind().Version,
+			SourceKind:       "application",
+			SourceName:       app.GetName(),
+			Dest:             "",
+			DestCluster:      "",
+			DestNamespace:    "",
+			DestApiGroup:     "",
+			DestApiVersion:   "",
+			DestKind:         "",
+			DestName:         "",
+		},
+	}
+
+	// Need to convert the relationships from string to byte array to array of
+	// structs
+	actualRelationships := []Relationship{}
+	relationshipsByteArray := []byte(relationshipsConfigmap.Data["relationships"])
+	err = json.Unmarshal(relationshipsByteArray, &actualRelationships)
+	if err != nil {
+		klog.Error(err)
+		t.Fail()
+	}
+
+	for _, relationship := range expectedRelationships {
+		g.Expect(relationship).To(BeElementOf(actualRelationships))
+	}
 }
