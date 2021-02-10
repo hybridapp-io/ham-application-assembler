@@ -285,8 +285,14 @@ func (r *ReconcileApplication) objectsDeepEquals(oldStatus []sigappv1beta1.Objec
 // TODO: complete this function
 func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Application) (*corev1.ConfigMap, error) {
 
-	relationships := []Relationship{
-		Relationship{
+	resources, err := r.fetchApplicationComponents(app)
+	if err != nil {
+		return nil, err
+	}
+
+	relationships := []Relationship{}
+	for _, resource := range resources {
+		relationships = append(relationships, Relationship{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
@@ -295,14 +301,14 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 			SourceApiVersion: app.GroupVersionKind().Version,
 			SourceKind:       "application",
 			SourceName:       app.GetName(),
-			Dest:             "",
-			DestCluster:      "",
-			DestNamespace:    "",
-			DestApiGroup:     "",
-			DestApiVersion:   "",
-			DestKind:         "",
-			DestName:         "",
-		},
+			Dest:             "k8s",
+			DestCluster:      resource.GetClusterName(),
+			DestNamespace:    resource.GetNamespace(),
+			DestApiGroup:     resource.GroupVersionKind().Group,
+			DestApiVersion:   resource.GroupVersionKind().Version,
+			DestKind:         resource.GroupVersionKind().Kind,
+			DestName:         resource.GetName(),
+		})
 	}
 	relationshipsByteArray, err := json.Marshal(relationships)
 	if err != nil {
