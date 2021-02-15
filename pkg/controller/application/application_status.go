@@ -220,29 +220,24 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 
 	// update the app status
 	err = r.Status().Update(context.TODO(), app)
-
-	// Build configmap of resources related to application
-	// Configmap will have same name and namespace as associated application
-	// Update existing configmap or else create new
-	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app)
-
-	configmapKey := types.NamespacedName{
-		Name:      app.GetName(),
-		Namespace: app.GetNamespace(),
-	}
-	err = r.Get(context.TODO(), configmapKey, &corev1.ConfigMap{})
-	// Create the configmap if not existing
 	if err != nil {
-		if errors.IsNotFound(err) {
-			err = r.Create(context.TODO(), relationshipsConfigmap)
-
-			return err
-		}
 		return err
 	}
 
-	// Update existing configmap
-	err = r.Update(context.TODO(), relationshipsConfigmap)
+	// Build configmap of resources related to application if it has hybrid
+	// deployables
+	hasHdpl := false
+	// TODO: is this check sufficient?
+	// if app.Spec.ComponentGroupKinds[0].Group == "core.hybridapp.io" && app.Spec.ComponentGroupKinds[0].Kind == "Deployable"
+	for _, res := range resources {
+		if res.GroupVersionKind().Group == "core.hybridapp.io" && res.GroupVersionKind().Kind == "Deployable" {
+			hasHdpl = true
+			break
+		}
+	}
+	if hasHdpl {
+		err = r.updateAppRelationships(app)
+	}
 
 	return err
 }
@@ -283,6 +278,38 @@ func (r *ReconcileApplication) objectsDeepEquals(oldStatus []sigappv1beta1.Objec
 }
 
 // TODO: complete this function
+// updateAppRelationships updates the configmap that contains the app's related
+// resources
+func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Application) error {
+	// build the new configmap
+	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app)
+
+	// Update existing configmap or else create new
+	// Configmap will have same name and namespace as associated application
+	configmapKey := types.NamespacedName{
+		Name:      app.GetName(),
+		Namespace: app.GetNamespace(),
+	}
+	err = r.Get(context.TODO(), configmapKey, &corev1.ConfigMap{})
+	// Create the configmap if not existing
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.Create(context.TODO(), relationshipsConfigmap)
+
+			return err
+		}
+		return err
+	}
+
+	// Update existing configmap
+	err = r.Update(context.TODO(), relationshipsConfigmap)
+
+	return err
+}
+
+// TODO: complete this function
+// buildRelationshipsConfigmap builds a configmap of resources related to the
+// app
 func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Application) (*corev1.ConfigMap, error) {
 
 	resources, err := r.fetchApplicationComponents(app)
@@ -310,6 +337,8 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 			DestName:         resource.GetName(),
 		})
 	}
+
+	// Convert into json and then into string map to store in configmap data
 	relationshipsByteArray, err := json.Marshal(relationships)
 	if err != nil {
 		klog.Info("Failed to marshal object with error", err)

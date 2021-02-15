@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 func TestDiscoveredComponentsInSameNamespace(t *testing.T) {
@@ -419,7 +420,19 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	}()
 
 	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	hdpl1 := mc1Hdpl.DeepCopy()
+	g.Expect(c.Create(context.TODO(), hdpl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), hdpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
 	dpl1 := mc1ServiceDeployable.DeepCopy()
+	dpl1.ObjectMeta.Annotations = map[string]string{
+		hdplv1alpha1.HostingHybridDeployable: hdpl1.Name + "/" + hdpl1.Namespace,
+	}
 	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
 	defer func() {
 		if err = c.Delete(context.TODO(), dpl1); err != nil {
@@ -428,17 +441,8 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 		}
 	}()
 
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
-	defer func() {
-		if err = c.Delete(context.Background(), dpl2); err != nil {
-			klog.Error(err)
-			t.Fail()
-		}
-	}()
-
 	// Create the Application object and expect the deployables
-	app := application.DeepCopy()
+	app := hybridApp.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 	defer func() {
 		if err = c.Delete(context.TODO(), app); err != nil {
@@ -449,22 +453,16 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	// the two services should now be in the app status
+	// the two hybrid deployables should now be in the app status
 	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
 
-	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(2))
+	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(1))
 	components := []sigappv1beta1.ObjectStatus{
 		{
-			Group: toolsv1alpha1.DeployableGVK.Group,
-			Kind:  toolsv1alpha1.DeployableGVK.Kind,
-			Name:  dpl1.Name,
-			Link:  dpl1.SelfLink,
-		},
-		{
-			Group: toolsv1alpha1.DeployableGVK.Group,
-			Kind:  toolsv1alpha1.DeployableGVK.Kind,
-			Name:  dpl2.Name,
-			Link:  dpl2.SelfLink,
+			Group: toolsv1alpha1.HybridDeployableGK.Group,
+			Kind:  toolsv1alpha1.HybridDeployableGK.Kind,
+			Name:  hdpl1.Name,
+			Link:  hdpl1.SelfLink,
 		},
 	}
 	for _, comp := range app.Status.ComponentList.Objects {
@@ -488,29 +486,12 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			SourceKind:       "application",
 			SourceName:       app.GetName(),
 			Dest:             "k8s",
-			DestCluster:      dpl1.GetClusterName(),
-			DestNamespace:    dpl1.GetNamespace(),
-			DestApiGroup:     toolsv1alpha1.DeployableGVK.Group,
-			DestApiVersion:   toolsv1alpha1.DeployableGVK.Version,
-			DestKind:         toolsv1alpha1.DeployableGVK.Kind,
-			DestName:         dpl1.GetName(),
-		},
-		Relationship{
-			Label:            "uses",
-			Source:           "k8s",
-			SourceCluster:    "local-cluster",
-			SourceNamespace:  app.GetNamespace(),
-			SourceApiGroup:   app.GroupVersionKind().Group,
-			SourceApiVersion: app.GroupVersionKind().Version,
-			SourceKind:       "application",
-			SourceName:       app.GetName(),
-			Dest:             "k8s",
-			DestCluster:      dpl2.GetClusterName(),
-			DestNamespace:    dpl2.GetNamespace(),
-			DestApiGroup:     toolsv1alpha1.DeployableGVK.Group,
-			DestApiVersion:   toolsv1alpha1.DeployableGVK.Version,
-			DestKind:         toolsv1alpha1.DeployableGVK.Kind,
-			DestName:         dpl2.GetName(),
+			DestCluster:      hdpl1.GetClusterName(),
+			DestNamespace:    hdpl1.GetNamespace(),
+			DestApiGroup:     toolsv1alpha1.HybridDeployableGK.Group,
+			DestApiVersion:   "v1alpha1",
+			DestKind:         toolsv1alpha1.HybridDeployableGK.Kind,
+			DestName:         hdpl1.GetName(),
 		},
 	}
 

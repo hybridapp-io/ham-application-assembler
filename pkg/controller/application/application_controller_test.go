@@ -36,6 +36,7 @@ import (
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	placementv1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
 )
 
 var (
@@ -232,6 +233,80 @@ var (
 				{
 					Group: "apps",
 					Kind:  "StatefulSet",
+				},
+			},
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					selectorName: appName,
+				},
+			},
+		},
+	}
+
+	hpr1Name      = "hrp-1"
+	hpr1Namespace = "default"
+	hpr1Key       = types.NamespacedName{
+		Name:      hpr1Name,
+		Namespace: hpr1Namespace,
+	}
+	placementRule = &placementv1.PlacementRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hpr1Name,
+			Namespace: hpr1Namespace,
+		},
+		Spec: placementv1.PlacementRuleSpec{
+			GenericPlacementFields: placementv1.GenericPlacementFields{
+				ClusterSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"name": mc1Name},
+				},
+			},
+		},
+	}
+
+	deployerType = "service"
+
+	templateInHybridDeployable = hdplv1alpha1.HybridTemplate{
+		DeployerType: deployerType,
+		Template: &runtime.RawExtension{
+			Object: &mc1Service,
+		},
+	}
+
+	mc1Hdpl = &hdplv1alpha1.Deployable{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      mc1ServiceName,
+			Namespace: "default",
+			Labels: map[string]string{
+				selectorName: appName,
+			},
+		},
+		Spec: hdplv1alpha1.DeployableSpec{
+			HybridTemplates: []hdplv1alpha1.HybridTemplate{
+				templateInHybridDeployable,
+			},
+			Placement: &hdplv1alpha1.HybridPlacement{
+				PlacementRef: &corev1.ObjectReference{
+					Name:      hpr1Name,
+					Namespace: hpr1Namespace,
+				},
+			},
+		},
+	}
+
+	hybridApp = &sigappv1beta1.Application{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: "default",
+			Labels:    selectorLabels,
+			Annotations: map[string]string{
+				hdplv1alpha1.AnnotationHybridDiscovery: hdplv1alpha1.HybridDiscoveryEnabled,
+			},
+		},
+		Spec: sigappv1beta1.ApplicationSpec{
+			ComponentGroupKinds: []metav1.GroupKind{
+				{
+					Group: "core.hybridapp.io",
+					Kind:  "Deployable",
 				},
 			},
 			Selector: &metav1.LabelSelector{
