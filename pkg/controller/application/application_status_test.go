@@ -441,6 +441,15 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 		}
 	}()
 
+	hdpl2 := imHdpl.DeepCopy()
+	g.Expect(c.Create(context.TODO(), hdpl2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), hdpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
 	// Create the Application object and expect the deployables
 	app := hybridApp.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
@@ -456,13 +465,19 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	// the two hybrid deployables should now be in the app status
 	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
 
-	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(1))
+	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(2))
 	components := []sigappv1beta1.ObjectStatus{
 		{
 			Group: toolsv1alpha1.HybridDeployableGK.Group,
 			Kind:  toolsv1alpha1.HybridDeployableGK.Kind,
 			Name:  hdpl1.Name,
 			Link:  hdpl1.SelfLink,
+		},
+		{
+			Group: toolsv1alpha1.HybridDeployableGK.Group,
+			Kind:  toolsv1alpha1.HybridDeployableGK.Kind,
+			Name:  hdpl2.Name,
+			Link:  hdpl2.SelfLink,
 		},
 	}
 	for _, comp := range app.Status.ComponentList.Objects {
@@ -492,6 +507,23 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestApiVersion:   "v1alpha1",
 			DestKind:         toolsv1alpha1.HybridDeployableGK.Kind,
 			DestName:         hdpl1.GetName(),
+		},
+		Relationship{
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  app.GetNamespace(),
+			SourceApiGroup:   app.GroupVersionKind().Group,
+			SourceApiVersion: app.GroupVersionKind().Version,
+			SourceKind:       "application",
+			SourceName:       app.GetName(),
+			Dest:             "k8s",
+			DestCluster:      hdpl2.GetClusterName(),
+			DestNamespace:    hdpl2.GetNamespace(),
+			DestApiGroup:     toolsv1alpha1.HybridDeployableGK.Group,
+			DestApiVersion:   "v1alpha1",
+			DestKind:         toolsv1alpha1.HybridDeployableGK.Kind,
+			DestName:         hdpl2.GetName(),
 		},
 	}
 

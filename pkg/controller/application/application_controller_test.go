@@ -36,6 +36,7 @@ import (
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	placementv1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
 )
 
@@ -263,10 +264,10 @@ var (
 		},
 	}
 
-	deployerType = "service"
+	mc1deployerType = "service"
 
-	templateInHybridDeployable = hdplv1alpha1.HybridTemplate{
-		DeployerType: deployerType,
+	mc1HybridTemplate = hdplv1alpha1.HybridTemplate{
+		DeployerType: mc1deployerType,
 		Template: &runtime.RawExtension{
 			Object: &mc1Service,
 		},
@@ -282,12 +283,76 @@ var (
 		},
 		Spec: hdplv1alpha1.DeployableSpec{
 			HybridTemplates: []hdplv1alpha1.HybridTemplate{
-				templateInHybridDeployable,
+				mc1HybridTemplate,
 			},
 			Placement: &hdplv1alpha1.HybridPlacement{
 				PlacementRef: &corev1.ObjectReference{
 					Name:      hpr1Name,
 					Namespace: hpr1Namespace,
+				},
+			},
+		},
+	}
+
+	imDeployerName      = "imDeployer"
+	imDeployerNamespace = localClusterName
+	imDeployerKey       = types.NamespacedName{
+		Name:      imDeployerName,
+		Namespace: imDeployerNamespace,
+	}
+	imDeployerType = "ibminfra"
+
+	imDeployer = &prulev1alpha1.Deployer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      imDeployerKey.Name,
+			Namespace: imDeployerKey.Namespace,
+			Labels:    map[string]string{"deployer-type": imDeployerType},
+		},
+		Spec: prulev1alpha1.DeployerSpec{
+			Type: imDeployerType,
+		},
+	}
+
+	// TODO: how to make this a virtualmachine
+	vmObject = &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "infra.management.ibm.com/v1alpha1",
+			Kind:       "VirtualMachine",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cf-vm",
+			Namespace: "default",
+		},
+		Data: map[string]string{"myconfig": "foo"},
+	}
+
+	imHybridTemplate = hdplv1alpha1.HybridTemplate{
+		DeployerType: imDeployerType,
+		Template: &runtime.RawExtension{
+			Object: vmObject,
+		},
+	}
+
+	deployerRef = corev1.ObjectReference{
+		Name:      imDeployerKey.Name,
+		Namespace: imDeployerKey.Namespace,
+	}
+
+	imHdpl = &hdplv1alpha1.Deployable{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "vm-test",
+			Namespace: "default",
+			Labels: map[string]string{
+				selectorName: appName,
+			},
+		},
+		Spec: hdplv1alpha1.DeployableSpec{
+			HybridTemplates: []hdplv1alpha1.HybridTemplate{
+				imHybridTemplate,
+			},
+			Placement: &hdplv1alpha1.HybridPlacement{
+				Deployers: []corev1.ObjectReference{
+					deployerRef,
 				},
 			},
 		},
