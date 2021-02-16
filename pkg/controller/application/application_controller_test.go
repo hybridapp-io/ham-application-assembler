@@ -37,7 +37,6 @@ import (
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
-	placementv1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
 )
 
 var (
@@ -244,30 +243,29 @@ var (
 		},
 	}
 
-	hpr1Name      = "hrp-1"
+	// hybrid deployable using placementrule
+	hpr1Name      = "hpr-1"
 	hpr1Namespace = "default"
 	hpr1Key       = types.NamespacedName{
 		Name:      hpr1Name,
 		Namespace: hpr1Namespace,
 	}
-	placementRule = &placementv1.PlacementRule{
+	mc1DeployerType = "kubernetes"
+	hpr1            = &prulev1alpha1.PlacementRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hpr1Name,
 			Namespace: hpr1Namespace,
 		},
-		Spec: placementv1.PlacementRuleSpec{
-			GenericPlacementFields: placementv1.GenericPlacementFields{
-				ClusterSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{"name": mc1Name},
-				},
+		Spec: prulev1alpha1.PlacementRuleSpec{
+			DeployerType: &mc1DeployerType,
+			TargetLabels: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"name": mc1Name},
 			},
 		},
 	}
 
-	mc1deployerType = "service"
-
 	mc1HybridTemplate = hdplv1alpha1.HybridTemplate{
-		DeployerType: mc1deployerType,
+		DeployerType: mc1DeployerType,
 		Template: &runtime.RawExtension{
 			Object: &mc1Service,
 		},
@@ -294,6 +292,7 @@ var (
 		},
 	}
 
+	// hybrid deployable using deployer for ifrastructure management
 	imDeployerName      = "imDeployer"
 	imDeployerNamespace = localClusterName
 	imDeployerKey       = types.NamespacedName{
@@ -310,6 +309,22 @@ var (
 		},
 		Spec: prulev1alpha1.DeployerSpec{
 			Type: imDeployerType,
+		},
+	}
+
+	hpr2Name      = "hpr-2"
+	hpr2Namespace = "default"
+	hpr2Key       = types.NamespacedName{
+		Name:      hpr2Name,
+		Namespace: hpr2Namespace,
+	}
+	hpr2 = &prulev1alpha1.PlacementRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hpr2Name,
+			Namespace: hpr2Namespace,
+		},
+		Spec: prulev1alpha1.PlacementRuleSpec{
+			DeployerType: &imDeployerType,
 		},
 	}
 
@@ -333,11 +348,6 @@ var (
 		},
 	}
 
-	deployerRef = corev1.ObjectReference{
-		Name:      imDeployerKey.Name,
-		Namespace: imDeployerKey.Namespace,
-	}
-
 	imHdpl = &hdplv1alpha1.Deployable{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "vm-test",
@@ -351,8 +361,9 @@ var (
 				imHybridTemplate,
 			},
 			Placement: &hdplv1alpha1.HybridPlacement{
-				Deployers: []corev1.ObjectReference{
-					deployerRef,
+				PlacementRef: &corev1.ObjectReference{
+					Name:      hpr2Name,
+					Namespace: hpr2Namespace,
 				},
 			},
 		},
@@ -382,6 +393,7 @@ var (
 		},
 	}
 
+	// configmap for application relationships
 	configMap = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      appName,
