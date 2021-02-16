@@ -429,6 +429,15 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 		}
 	}()
 
+	hpr1 := hpr1.DeepCopy()
+	g.Expect(c.Create(context.TODO(), hpr1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), hpr1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
 	dpl1 := mc1ServiceDeployable.DeepCopy()
 	dpl1.ObjectMeta.Annotations = map[string]string{
 		hdplv1alpha1.HostingHybridDeployable: hdpl1.Name + "/" + hdpl1.Namespace,
@@ -445,6 +454,15 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	g.Expect(c.Create(context.TODO(), hdpl2)).NotTo(HaveOccurred())
 	defer func() {
 		if err = c.Delete(context.TODO(), hdpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	hpr2 := hpr2.DeepCopy()
+	g.Expect(c.Create(context.TODO(), hpr2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), hpr2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
@@ -501,7 +519,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			SourceKind:       "application",
 			SourceName:       app.GetName(),
 			Dest:             "k8s",
-			DestCluster:      hdpl1.GetClusterName(),
+			DestCluster:      "local-cluster",
 			DestNamespace:    hdpl1.GetNamespace(),
 			DestApiGroup:     toolsv1alpha1.HybridDeployableGK.Group,
 			DestApiVersion:   "v1alpha1",
@@ -518,12 +536,46 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			SourceKind:       "application",
 			SourceName:       app.GetName(),
 			Dest:             "k8s",
-			DestCluster:      hdpl2.GetClusterName(),
+			DestCluster:      "local-cluster",
 			DestNamespace:    hdpl2.GetNamespace(),
 			DestApiGroup:     toolsv1alpha1.HybridDeployableGK.Group,
 			DestApiVersion:   "v1alpha1",
 			DestKind:         toolsv1alpha1.HybridDeployableGK.Kind,
 			DestName:         hdpl2.GetName(),
+		},
+		Relationship{
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  hdpl1.GetNamespace(),
+			SourceApiGroup:   toolsv1alpha1.HybridDeployableGK.Group,
+			SourceApiVersion: "v1alpha1",
+			SourceKind:       toolsv1alpha1.HybridDeployableGK.Kind,
+			SourceName:       hdpl1.GetName(),
+			Dest:             "k8s",
+			DestCluster:      "local-cluster",
+			DestNamespace:    hpr1.GetNamespace(),
+			DestApiGroup:     "core.hybridapp.io",
+			DestApiVersion:   "v1alpha1",
+			DestKind:         "PlacementRule",
+			DestName:         hpr1.GetName(),
+		},
+		Relationship{
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  hdpl2.GetNamespace(),
+			SourceApiGroup:   toolsv1alpha1.HybridDeployableGK.Group,
+			SourceApiVersion: "v1alpha1",
+			SourceKind:       toolsv1alpha1.HybridDeployableGK.Kind,
+			SourceName:       hdpl2.GetName(),
+			Dest:             "k8s",
+			DestCluster:      "local-cluster",
+			DestNamespace:    hpr2.GetNamespace(),
+			DestApiGroup:     "core.hybridapp.io",
+			DestApiVersion:   "v1alpha1",
+			DestKind:         "PlacementRule",
+			DestName:         hpr2.GetName(),
 		},
 	}
 

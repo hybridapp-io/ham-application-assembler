@@ -36,6 +36,7 @@ import (
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 )
 
 const (
@@ -319,6 +320,16 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 
 	relationships := []Relationship{}
 	for _, resource := range resources {
+		// Check if resource exists and add to relationships
+		hdplKey := types.NamespacedName{
+			Name:      resource.GetName(),
+			Namespace: resource.GetNamespace(),
+		}
+		hdpl := hdplv1alpha1.Deployable{}
+		err = r.Get(context.TODO(), hdplKey, &hdpl)
+		if err != nil {
+			continue
+		}
 		relationships = append(relationships, Relationship{
 			Label:            "uses",
 			Source:           "k8s",
@@ -329,13 +340,17 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 			SourceKind:       "application",
 			SourceName:       app.GetName(),
 			Dest:             "k8s",
-			DestCluster:      resource.GetClusterName(),
+			DestCluster:      "local-cluster",
 			DestNamespace:    resource.GetNamespace(),
 			DestApiGroup:     resource.GroupVersionKind().Group,
 			DestApiVersion:   resource.GroupVersionKind().Version,
 			DestKind:         resource.GroupVersionKind().Kind,
 			DestName:         resource.GetName(),
 		})
+
+		// recursively find relationships of each resource
+		relationships = r.addHdplRelationships(&hdpl, relationships)
+
 	}
 
 	// Convert into json and then into string map to store in configmap data
@@ -354,4 +369,34 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 	}
 
 	return relationshipsConfigmap, nil
+}
+
+func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployable, relationships []Relationship) []Relationship {
+	hprRef := hdpl.Spec.Placement.PlacementRef
+	hprKey := types.NamespacedName{
+		Name:      hprRef.Name,
+		Namespace: hprRef.Namespace,
+	}
+	hpr := prulev1alpha1.PlacementRule{}
+	err := r.Get(context.TODO(), hprKey, &hpr)
+	if err == nil {
+		relationships = append(relationships, Relationship{
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  hdpl.GetNamespace(),
+			SourceApiGroup:   hdpl.GroupVersionKind().Group,
+			SourceApiVersion: hdpl.GroupVersionKind().Version,
+			SourceKind:       hdpl.GroupVersionKind().Kind,
+			SourceName:       hdpl.GetName(),
+			Dest:             "k8s",
+			DestCluster:      "local-cluster",
+			DestNamespace:    hpr.GetNamespace(),
+			DestApiGroup:     "core.hybridapp.io",
+			DestApiVersion:   "v1alpha1",
+			DestKind:         "PlacementRule",
+			DestName:         hpr.GetName(),
+		})
+	}
+	return relationships
 }
