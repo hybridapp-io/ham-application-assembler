@@ -372,6 +372,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 }
 
 func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployable, relationships []Relationship) []Relationship {
+	// Get hybrid placementrule
 	hprRef := hdpl.Spec.Placement.PlacementRef
 	hprKey := types.NamespacedName{
 		Name:      hprRef.Name,
@@ -398,5 +399,35 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 			DestName:         hpr.GetName(),
 		})
 	}
+
+	// get deployables
+	dplList := &dplv1.DeployableList{}
+	err = r.List(context.TODO(), dplList)
+	if err == nil {
+		for _, dpl := range dplList.Items {
+			if hostHdpl, ok := dpl.Annotations[hdplv1alpha1.HostingHybridDeployable]; ok && hostHdpl == hdpl.Namespace+"/"+hdpl.Name {
+				relationships = append(relationships, Relationship{
+					Label:            "uses",
+					Source:           "k8s",
+					SourceCluster:    "local-cluster",
+					SourceNamespace:  hdpl.GetNamespace(),
+					SourceApiGroup:   hdpl.GroupVersionKind().Group,
+					SourceApiVersion: hdpl.GroupVersionKind().Version,
+					SourceKind:       hdpl.GroupVersionKind().Kind,
+					SourceName:       hdpl.GetName(),
+					Dest:             "k8s",
+					DestCluster:      "local-cluster",
+					DestNamespace:    dpl.GetNamespace(),
+					DestApiGroup:     dpl.GroupVersionKind().Group,
+					DestApiVersion:   dpl.GroupVersionKind().Version,
+					DestKind:         dpl.GroupVersionKind().Kind,
+					DestName:         dpl.GetName(),
+				})
+
+			}
+		}
+
+	}
+
 	return relationships
 }

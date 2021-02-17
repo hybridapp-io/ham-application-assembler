@@ -114,6 +114,7 @@ var (
 			Namespace: mc1Name,
 			Annotations: map[string]string{
 				hdplv1alpha1.AnnotationHybridDiscovery: "true",
+				hdplv1alpha1.HostingHybridDeployable:   "default/" + mc1ServiceName,
 			},
 			Labels: map[string]string{
 				selectorName: appName,

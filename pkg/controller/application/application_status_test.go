@@ -23,12 +23,12 @@ import (
 	"k8s.io/klog"
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
-	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 func TestDiscoveredComponentsInSameNamespace(t *testing.T) {
@@ -438,10 +438,19 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 		}
 	}()
 
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	dpl1.ObjectMeta.Annotations = map[string]string{
-		hdplv1alpha1.HostingHybridDeployable: hdpl1.Name + "/" + hdpl1.Namespace,
+	// Update decision of pr
+	g.Expect(c.Get(context.TODO(), hpr1Key, hpr1)).NotTo(HaveOccurred())
+	hpr1.Status.Decisions = []corev1.ObjectReference{
+		{
+			Namespace:  mc1Name,
+			Kind:       "Cluster",
+			Name:       mc1Name,
+			APIVersion: "clusterregistry.k8s.io/v1alpha1",
+		},
 	}
+	g.Expect(c.Update(context.TODO(), hpr1)).NotTo(HaveOccurred())
+
+	dpl1 := mc1ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
 	defer func() {
 		if err = c.Delete(context.TODO(), dpl1); err != nil {
@@ -559,6 +568,23 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestApiVersion:   "v1alpha1",
 			DestKind:         "PlacementRule",
 			DestName:         hpr1.GetName(),
+		},
+		Relationship{
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  hdpl1.GetNamespace(),
+			SourceApiGroup:   toolsv1alpha1.HybridDeployableGK.Group,
+			SourceApiVersion: "v1alpha1",
+			SourceKind:       toolsv1alpha1.HybridDeployableGK.Kind,
+			SourceName:       hdpl1.GetName(),
+			Dest:             "k8s",
+			DestCluster:      "local-cluster",
+			DestNamespace:    dpl1.GetNamespace(),
+			DestApiGroup:     toolsv1alpha1.DeployableGVK.Group,
+			DestApiVersion:   toolsv1alpha1.DeployableGVK.Version,
+			DestKind:         toolsv1alpha1.DeployableGVK.Kind,
+			DestName:         dpl1.GetName(),
 		},
 		Relationship{
 			Label:            "uses",
