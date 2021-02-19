@@ -382,77 +382,84 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 	}
 	hpr := prulev1alpha1.PlacementRule{}
 	err := r.Get(context.TODO(), hprKey, &hpr)
-	if err == nil {
-		relationships = append(relationships, Relationship{
-			Label:            "uses",
-			Source:           "k8s",
-			SourceCluster:    "local-cluster",
-			SourceNamespace:  hdpl.GetNamespace(),
-			SourceApiGroup:   hdpl.GroupVersionKind().Group,
-			SourceApiVersion: hdpl.GroupVersionKind().Version,
-			SourceKind:       hdpl.GroupVersionKind().Kind,
-			SourceName:       hdpl.GetName(),
-			Dest:             "k8s",
-			DestCluster:      "local-cluster",
-			DestNamespace:    hpr.GetNamespace(),
-			DestApiGroup:     "core.hybridapp.io",
-			DestApiVersion:   "v1alpha1",
-			DestKind:         "PlacementRule",
-			DestName:         hpr.GetName(),
-		})
+	// if PlacementRule missing, don't look for remaining resources
+	if err != nil {
+		return relationships
 	}
+	relationships = append(relationships, Relationship{
+		Label:            "uses",
+		Source:           "k8s",
+		SourceCluster:    "local-cluster",
+		SourceNamespace:  hdpl.GetNamespace(),
+		SourceApiGroup:   hdpl.GroupVersionKind().Group,
+		SourceApiVersion: hdpl.GroupVersionKind().Version,
+		SourceKind:       hdpl.GroupVersionKind().Kind,
+		SourceName:       hdpl.GetName(),
+		Dest:             "k8s",
+		DestCluster:      "local-cluster",
+		DestNamespace:    hpr.GetNamespace(),
+		DestApiGroup:     "core.hybridapp.io",
+		DestApiVersion:   "v1alpha1",
+		DestKind:         "PlacementRule",
+		DestName:         hpr.GetName(),
+	})
 
-	// Get related Deployables
-	dplList := &dplv1.DeployableList{}
-	err = r.List(context.TODO(), dplList)
-	if err == nil {
-		for _, dpl := range dplList.Items {
-			if dpl.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
-				relationships = append(relationships, Relationship{
-					Label:            "uses",
-					Source:           "k8s",
-					SourceCluster:    "local-cluster",
-					SourceNamespace:  hdpl.GetNamespace(),
-					SourceApiGroup:   hdpl.GroupVersionKind().Group,
-					SourceApiVersion: hdpl.GroupVersionKind().Version,
-					SourceKind:       hdpl.GroupVersionKind().Kind,
-					SourceName:       hdpl.GetName(),
-					Dest:             "k8s",
-					DestCluster:      "local-cluster",
-					DestNamespace:    dpl.GetNamespace(),
-					DestApiGroup:     dpl.GroupVersionKind().Group,
-					DestApiVersion:   dpl.GroupVersionKind().Version,
-					DestKind:         dpl.GroupVersionKind().Kind,
-					DestName:         dpl.GetName(),
-				})
+	for _, decision := range hpr.Status.Decisions {
+		klog.Info("Decision: ", decision.Namespace)
+		if decision.Kind == "Cluster" {
+			// Get related Deployables
+			dplList := &dplv1.DeployableList{}
+			err = r.List(context.TODO(), dplList, &client.ListOptions{Namespace: decision.Namespace})
+			if err == nil {
+				for _, dpl := range dplList.Items {
+					if dpl.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
+						relationships = append(relationships, Relationship{
+							Label:            "uses",
+							Source:           "k8s",
+							SourceCluster:    "local-cluster",
+							SourceNamespace:  hdpl.GetNamespace(),
+							SourceApiGroup:   hdpl.GroupVersionKind().Group,
+							SourceApiVersion: hdpl.GroupVersionKind().Version,
+							SourceKind:       hdpl.GroupVersionKind().Kind,
+							SourceName:       hdpl.GetName(),
+							Dest:             "k8s",
+							DestCluster:      "local-cluster",
+							DestNamespace:    dpl.GetNamespace(),
+							DestApiGroup:     dpl.GroupVersionKind().Group,
+							DestApiVersion:   dpl.GroupVersionKind().Version,
+							DestKind:         dpl.GroupVersionKind().Kind,
+							DestName:         dpl.GetName(),
+						})
+					}
+				}
 			}
-		}
-	}
-
-	// Get VirtualMachines
-	// Look for GVKGVR mapping to determine whether VirtualMachine cdr exists
-	gvr, ok := utils.GVKGVRMap[schema.GroupVersionKind{
-		Group:   "infra.management.ibm.com",
-		Version: "v1alpha1",
-		Kind:    "VirtualMachine",
-	}]
-	if ok {
-		vmList, err := r.dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
-		if err == nil {
-			for _, vm := range vmList.Items {
-				if vm.GetAnnotations()[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
-					relationships = append(relationships, Relationship{
-						Label:            "uses",
-						Source:           "k8s",
-						SourceCluster:    "local-cluster",
-						SourceNamespace:  hdpl.GetNamespace(),
-						SourceApiGroup:   hdpl.GroupVersionKind().Group,
-						SourceApiVersion: hdpl.GroupVersionKind().Version,
-						SourceKind:       hdpl.GroupVersionKind().Kind,
-						SourceName:       hdpl.GetName(),
-						Dest:             "im",
-						DestUID:          string(vm.GetUID()),
-					})
+		} else if decision.Kind == "Deployer" {
+			// Get VirtualMachines
+			// Look for GVKGVR mapping to determine whether VirtualMachine cdr exists
+			gvr, ok := utils.GVKGVRMap[schema.GroupVersionKind{
+				Group:   "infra.management.ibm.com",
+				Version: "v1alpha1",
+				Kind:    "VirtualMachine",
+			}]
+			if ok {
+				vmList, err := r.dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+				if err == nil {
+					for _, vm := range vmList.Items {
+						if vm.GetAnnotations()[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
+							relationships = append(relationships, Relationship{
+								Label:            "uses",
+								Source:           "k8s",
+								SourceCluster:    "local-cluster",
+								SourceNamespace:  hdpl.GetNamespace(),
+								SourceApiGroup:   hdpl.GroupVersionKind().Group,
+								SourceApiVersion: hdpl.GroupVersionKind().Version,
+								SourceKind:       hdpl.GroupVersionKind().Kind,
+								SourceName:       hdpl.GetName(),
+								Dest:             "im",
+								DestUID:          string(vm.GetUID()),
+							})
+						}
+					}
 				}
 			}
 		}

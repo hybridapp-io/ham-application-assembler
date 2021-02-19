@@ -453,7 +453,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			APIVersion: "clusterregistry.k8s.io/v1alpha1",
 		},
 	}
-	g.Expect(c.Update(context.TODO(), hpr1)).NotTo(HaveOccurred())
+	g.Expect(c.Status().Update(context.TODO(), hpr1)).NotTo(HaveOccurred())
 
 	dpl1 := mc1ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
@@ -481,6 +481,18 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			t.Fail()
 		}
 	}()
+
+	// Update decision of pr
+	g.Expect(c.Get(context.TODO(), hpr2Key, hpr2)).NotTo(HaveOccurred())
+	hpr2.Status.Decisions = []corev1.ObjectReference{
+		{
+			Namespace:  imDeployerNamespace,
+			Kind:       "Deployer",
+			Name:       imDeployerName,
+			APIVersion: "core.hybridapp.io/v1alpha1",
+		},
+	}
+	g.Expect(c.Status().Update(context.TODO(), hpr2)).NotTo(HaveOccurred())
 
 	// Create vm resource using dynamic client
 	gvr := schema.GroupVersionResource{
