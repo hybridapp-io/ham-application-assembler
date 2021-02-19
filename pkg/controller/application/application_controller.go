@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 )
 
 // Add creates a new Application Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -53,6 +54,8 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		klog.Error("Failed to create dynamic client with error:", err)
 		return nil
 	}
+
+	utils.BuildGVKGVRMap(mgr.GetConfig())
 
 	return &ReconcileApplication{
 		Client:        mgr.GetClient(),
