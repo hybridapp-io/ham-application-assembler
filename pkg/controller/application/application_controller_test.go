@@ -244,7 +244,7 @@ var (
 		},
 	}
 
-	// hybrid deployable using placementrule
+	// hybrid deployable for remote resource
 	hpr1Name      = "hpr-1"
 	hpr1Namespace = "default"
 	hpr1Key       = types.NamespacedName{
@@ -329,18 +329,8 @@ var (
 		},
 	}
 
-	// TODO: how to make this a virtualmachine
-	vmObject = &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "infra.management.ibm.com/v1alpha1",
-			Kind:       "VirtualMachine",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cf-vm",
-			Namespace: "default",
-		},
-		Data: map[string]string{"myconfig": "foo"},
-	}
+	// Dummy object for hybrid template
+	vmObject = &corev1.ConfigMap{}
 
 	imHybridTemplate = hdplv1alpha1.HybridTemplate{
 		DeployerType: imDeployerType,
@@ -395,7 +385,7 @@ var (
 	}
 
 	// configmap for application relationships
-	configMap = &corev1.ConfigMap{
+	relationshipsCM = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      appName,
 			Namespace: "default",
