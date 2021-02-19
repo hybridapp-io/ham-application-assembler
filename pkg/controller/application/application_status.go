@@ -405,7 +405,6 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 	})
 
 	for _, decision := range hpr.Status.Decisions {
-		klog.Info("Decision: ", decision.Namespace)
 		if decision.Kind == "Cluster" {
 			// Get related Deployables
 			dplList := &dplv1.DeployableList{}
@@ -442,7 +441,7 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 				Kind:    "VirtualMachine",
 			}]
 			if ok {
-				vmList, err := r.dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+				vmList, err := r.dynamicClient.Resource(gvr).Namespace(hdpl.GetNamespace()).List(context.TODO(), metav1.ListOptions{})
 				if err == nil {
 					for _, vm := range vmList.Items {
 						if vm.GetAnnotations()[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {

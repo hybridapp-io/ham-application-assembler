@@ -295,7 +295,7 @@ var (
 
 	// hybrid deployable using deployer for ifrastructure management
 	imDeployerName      = "imDeployer"
-	imDeployerNamespace = localClusterName
+	imDeployerNamespace = "default"
 	imDeployerKey       = types.NamespacedName{
 		Name:      imDeployerName,
 		Namespace: imDeployerNamespace,

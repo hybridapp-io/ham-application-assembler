@@ -502,6 +502,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	}
 	vmObj := &unstructured.Unstructured{}
 	vmObj.SetName("vm-resource")
+	vmObj.SetNamespace("default")
 	vmObj.SetKind("VirtualMachine")
 	vmObj.SetAPIVersion("infra.management.ibm.com/v1alpha1")
 	vmObj.SetAnnotations(map[string]string{
