@@ -20,15 +20,20 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/klog"
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
 func TestDiscoveredComponentsInSameNamespace(t *testing.T) {
@@ -477,6 +482,23 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 		}
 	}()
 
+	// Create vm resource using dynamic client
+	gvr := schema.GroupVersionResource{
+		Group:    "infra.management.ibm.com",
+		Version:  "v1alpha1",
+		Resource: "virtualmachines",
+	}
+	vmObj := &unstructured.Unstructured{}
+	vmObj.SetName("vm-resource")
+	vmObj.SetKind("VirtualMachine")
+	vmObj.SetAPIVersion("infra.management.ibm.com/v1alpha1")
+	vmObj.SetAnnotations(map[string]string{
+		hdplv1alpha1.HostingHybridDeployable: "default/" + hdpl2.GetName(),
+	})
+
+	dynamicclient, err := dynamic.NewForConfig(mgr.GetConfig())
+	vmObj, err = dynamicclient.Resource(gvr).Namespace("default").Create(context.TODO(), vmObj, metav1.CreateOptions{})
+
 	// Create the Application object and expect the deployables
 	app := hybridApp.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
@@ -512,9 +534,9 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	}
 
 	// Check that configmap was created
-	relationshipsConfigmap := configMap.DeepCopy()
-	relationshipsConfigmap.Reset()
-	g.Expect(c.Get(context.TODO(), applicationKey, relationshipsConfigmap)).NotTo(HaveOccurred())
+	relationshipsCM := relationshipsCM.DeepCopy()
+	relationshipsCM.Reset()
+	g.Expect(c.Get(context.TODO(), applicationKey, relationshipsCM)).NotTo(HaveOccurred())
 
 	// Verify if all relationships exist
 	expectedRelationships := []Relationship{
@@ -603,12 +625,24 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestKind:         "PlacementRule",
 			DestName:         hpr2.GetName(),
 		},
+		Relationship{
+			Label:            "uses",
+			Source:           "k8s",
+			SourceCluster:    "local-cluster",
+			SourceNamespace:  hdpl2.GetNamespace(),
+			SourceApiGroup:   toolsv1alpha1.HybridDeployableGK.Group,
+			SourceApiVersion: "v1alpha1",
+			SourceKind:       toolsv1alpha1.HybridDeployableGK.Kind,
+			SourceName:       hdpl2.GetName(),
+			Dest:             "im",
+			DestUID:          string(vmObj.GetUID()),
+		},
 	}
 
 	// Need to convert the relationships from string to byte array to array of
 	// structs
 	actualRelationships := []Relationship{}
-	relationshipsByteArray := []byte(relationshipsConfigmap.Data["relationships"])
+	relationshipsByteArray := []byte(relationshipsCM.Data["relationships"])
 	err = json.Unmarshal(relationshipsByteArray, &actualRelationships)
 	if err != nil {
 		klog.Error(err)

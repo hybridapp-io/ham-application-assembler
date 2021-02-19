@@ -67,12 +67,13 @@ type Relationship struct {
 	SourceKind       string `json:"sourceKind"`
 	SourceName       string `json:"sourceName"`
 	Dest             string `json:"dest"`
-	DestCluster      string `json:"destCluster"`
-	DestNamespace    string `json:"destNamespace"`
-	DestApiGroup     string `json:"destApiGroup"`
-	DestApiVersion   string `json:"destApiVersion"`
-	DestKind         string `json:"destKind"`
-	DestName         string `json:"destName"`
+	DestCluster      string `json:"destCluster,omitempty"`
+	DestNamespace    string `json:"destNamespace,omitempty"`
+	DestApiGroup     string `json:"destApiGroup,omitempty"`
+	DestApiVersion   string `json:"destApiVersion,omitempty"`
+	DestKind         string `json:"destKind,omitempty"`
+	DestName         string `json:"destName,omitempty"`
+	DestUID          string `json:"destUID,omitempty"`
 }
 
 func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Application) bool {
@@ -278,9 +279,8 @@ func (r *ReconcileApplication) objectsDeepEquals(oldStatus []sigappv1beta1.Objec
 	return false
 }
 
-// TODO: complete this function
-// updateAppRelationships updates the configmap that contains the app's related
-// resources
+// updateAppRelationships updates the configmap resources related to the Hybrid
+// App
 func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Application) error {
 	// build the new configmap
 	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app)
@@ -308,7 +308,6 @@ func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Applica
 	return err
 }
 
-// TODO: complete this function
 // buildRelationshipsConfigmap builds a configmap of resources related to the
 // app
 func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Application) (*corev1.ConfigMap, error) {
@@ -371,8 +370,11 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 	return relationshipsConfigmap, nil
 }
 
+// addHdplRelationships adds resources that are related to a Hybrid Deployable
+// to the relationships configmap for the Hybrid App. Resources searched for
+// include Hybrid PlacementRule, Deployable, and VirtualMachine
 func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployable, relationships []Relationship) []Relationship {
-	// Get hybrid placementrule
+	// Get related Hybrid PlacementRules
 	hprRef := hdpl.Spec.Placement.PlacementRef
 	hprKey := types.NamespacedName{
 		Name:      hprRef.Name,
@@ -400,12 +402,12 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 		})
 	}
 
-	// get deployables
+	// Get related Deployables
 	dplList := &dplv1.DeployableList{}
 	err = r.List(context.TODO(), dplList)
 	if err == nil {
 		for _, dpl := range dplList.Items {
-			if hostHdpl, ok := dpl.Annotations[hdplv1alpha1.HostingHybridDeployable]; ok && hostHdpl == hdpl.Namespace+"/"+hdpl.Name {
+			if dpl.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
 				relationships = append(relationships, Relationship{
 					Label:            "uses",
 					Source:           "k8s",
@@ -423,10 +425,37 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 					DestKind:         dpl.GroupVersionKind().Kind,
 					DestName:         dpl.GetName(),
 				})
-
 			}
 		}
+	}
 
+	// Get VirtualMachines
+	// Look for GVKGVR mapping to determine whether VirtualMachine cdr exists
+	gvr, ok := utils.GVKGVRMap[schema.GroupVersionKind{
+		Group:   "infra.management.ibm.com",
+		Version: "v1alpha1",
+		Kind:    "VirtualMachine",
+	}]
+	if ok {
+		vmList, err := r.dynamicClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+		if err == nil {
+			for _, vm := range vmList.Items {
+				if vm.GetAnnotations()[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
+					relationships = append(relationships, Relationship{
+						Label:            "uses",
+						Source:           "k8s",
+						SourceCluster:    "local-cluster",
+						SourceNamespace:  hdpl.GetNamespace(),
+						SourceApiGroup:   hdpl.GroupVersionKind().Group,
+						SourceApiVersion: hdpl.GroupVersionKind().Version,
+						SourceKind:       hdpl.GroupVersionKind().Kind,
+						SourceName:       hdpl.GetName(),
+						Dest:             "im",
+						DestUID:          string(vm.GetUID()),
+					})
+				}
+			}
+		}
 	}
 
 	return relationships
