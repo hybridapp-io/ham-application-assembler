@@ -55,6 +55,11 @@ var (
 		Version: "v1beta1",
 		Kind:    "Application",
 	}
+	vmGVK = schema.GroupVersionKind{
+		Group:   "infra.management.ibm.com",
+		Version: "v1alpha1",
+		Kind:    "VirtualMachine",
+	}
 )
 
 type Relationship struct {
@@ -446,11 +451,7 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 		} else if decision.Kind == "Deployer" {
 			// Get VirtualMachines
 			// Look for GVKGVR mapping to determine whether VirtualMachine cdr exists
-			gvr, ok := utils.GVKGVRMap[schema.GroupVersionKind{
-				Group:   "infra.management.ibm.com",
-				Version: "v1alpha1",
-				Kind:    "VirtualMachine",
-			}]
+			gvr, ok := utils.GVKGVRMap[vmGVK]
 			if ok {
 				vmList, err := r.dynamicClient.Resource(gvr).Namespace(hdpl.GetNamespace()).List(context.TODO(), metav1.ListOptions{})
 				if err != nil {
