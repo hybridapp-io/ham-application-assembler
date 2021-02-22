@@ -284,6 +284,9 @@ func (r *ReconcileApplication) objectsDeepEquals(oldStatus []sigappv1beta1.Objec
 func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Application, resources []*unstructured.Unstructured) error {
 	// build the new configmap
 	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app, resources)
+	if err != nil {
+		return err
+	}
 
 	// Update existing configmap or else create new
 	// Configmap will have same name and namespace as associated application
@@ -322,7 +325,10 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 		hdpl := hdplv1alpha1.Deployable{}
 		err := r.Get(context.TODO(), hdplKey, &hdpl)
 		if err != nil {
-			continue
+			if errors.IsNotFound(err) {
+				continue
+			}
+			return nil, err
 		}
 		relationships = append(relationships, Relationship{
 			Label:            "uses",
@@ -343,7 +349,10 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 		})
 
 		// recursively find relationships of each resource
-		relationships = r.addHdplRelationships(&hdpl, relationships)
+		relationships, err = r.addHdplRelationships(&hdpl, relationships)
+		if err != nil {
+			return nil, err
+		}
 
 	}
 
@@ -368,7 +377,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 // addHdplRelationships adds resources that are related to a Hybrid Deployable
 // to the relationships configmap for the Hybrid App. Resources searched for
 // include Hybrid PlacementRule, Deployable, and VirtualMachine
-func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployable, relationships []Relationship) []Relationship {
+func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployable, relationships []Relationship) ([]Relationship, error) {
 	// Get related Hybrid PlacementRules
 	hprRef := hdpl.Spec.Placement.PlacementRef
 	hprKey := types.NamespacedName{
@@ -379,7 +388,10 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 	err := r.Get(context.TODO(), hprKey, &hpr)
 	// if PlacementRule missing, don't look for remaining resources
 	if err != nil {
-		return relationships
+		if errors.IsNotFound(err) {
+			return relationships, nil
+		}
+		return relationships, err
 	}
 	relationships = append(relationships, Relationship{
 		Label:            "uses",
@@ -404,27 +416,31 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 			// Get related Deployables
 			dplList := &dplv1.DeployableList{}
 			err = r.List(context.TODO(), dplList, &client.ListOptions{Namespace: decision.Namespace})
-			if err == nil {
-				for _, dpl := range dplList.Items {
-					if dpl.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
-						relationships = append(relationships, Relationship{
-							Label:            "uses",
-							Source:           "k8s",
-							SourceCluster:    "local-cluster",
-							SourceNamespace:  hdpl.GetNamespace(),
-							SourceApiGroup:   hdpl.GroupVersionKind().Group,
-							SourceApiVersion: hdpl.GroupVersionKind().Version,
-							SourceKind:       hdpl.GroupVersionKind().Kind,
-							SourceName:       hdpl.GetName(),
-							Dest:             "k8s",
-							DestCluster:      "local-cluster",
-							DestNamespace:    dpl.GetNamespace(),
-							DestApiGroup:     dpl.GroupVersionKind().Group,
-							DestApiVersion:   dpl.GroupVersionKind().Version,
-							DestKind:         dpl.GroupVersionKind().Kind,
-							DestName:         dpl.GetName(),
-						})
-					}
+			if err != nil {
+				if errors.IsNotFound(err) {
+					continue
+				}
+				return relationships, err
+			}
+			for _, dpl := range dplList.Items {
+				if dpl.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
+					relationships = append(relationships, Relationship{
+						Label:            "uses",
+						Source:           "k8s",
+						SourceCluster:    "local-cluster",
+						SourceNamespace:  hdpl.GetNamespace(),
+						SourceApiGroup:   hdpl.GroupVersionKind().Group,
+						SourceApiVersion: hdpl.GroupVersionKind().Version,
+						SourceKind:       hdpl.GroupVersionKind().Kind,
+						SourceName:       hdpl.GetName(),
+						Dest:             "k8s",
+						DestCluster:      "local-cluster",
+						DestNamespace:    dpl.GetNamespace(),
+						DestApiGroup:     dpl.GroupVersionKind().Group,
+						DestApiVersion:   dpl.GroupVersionKind().Version,
+						DestKind:         dpl.GroupVersionKind().Kind,
+						DestName:         dpl.GetName(),
+					})
 				}
 			}
 		} else if decision.Kind == "Deployer" {
@@ -437,27 +453,31 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 			}]
 			if ok {
 				vmList, err := r.dynamicClient.Resource(gvr).Namespace(hdpl.GetNamespace()).List(context.TODO(), metav1.ListOptions{})
-				if err == nil {
-					for _, vm := range vmList.Items {
-						if vm.GetAnnotations()[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
-							relationships = append(relationships, Relationship{
-								Label:            "uses",
-								Source:           "k8s",
-								SourceCluster:    "local-cluster",
-								SourceNamespace:  hdpl.GetNamespace(),
-								SourceApiGroup:   hdpl.GroupVersionKind().Group,
-								SourceApiVersion: hdpl.GroupVersionKind().Version,
-								SourceKind:       hdpl.GroupVersionKind().Kind,
-								SourceName:       hdpl.GetName(),
-								Dest:             "im",
-								DestUID:          string(vm.GetUID()),
-							})
-						}
+				if err != nil {
+					if errors.IsNotFound(err) {
+						continue
+					}
+					return relationships, err
+				}
+				for _, vm := range vmList.Items {
+					if vm.GetAnnotations()[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
+						relationships = append(relationships, Relationship{
+							Label:            "uses",
+							Source:           "k8s",
+							SourceCluster:    "local-cluster",
+							SourceNamespace:  hdpl.GetNamespace(),
+							SourceApiGroup:   hdpl.GroupVersionKind().Group,
+							SourceApiVersion: hdpl.GroupVersionKind().Version,
+							SourceKind:       hdpl.GroupVersionKind().Kind,
+							SourceName:       hdpl.GetName(),
+							Dest:             "im",
+							DestUID:          string(vm.GetUID()),
+						})
 					}
 				}
 			}
 		}
 	}
 
-	return relationships
+	return relationships, nil
 }
