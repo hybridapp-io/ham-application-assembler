@@ -55,6 +55,11 @@ var (
 		Version: "v1beta1",
 		Kind:    "Application",
 	}
+	hdplGVK = schema.GroupVersionKind{
+		Group:   "core.hybridapp.io",
+		Version: "v1alpha1",
+		Kind:    "Deployable",
+	}
 	vmGVK = schema.GroupVersionKind{
 		Group:   "infra.management.ibm.com",
 		Version: "v1alpha1",
@@ -235,7 +240,7 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 	// deployables
 	hasHdpl := false
 	for _, res := range resources {
-		if res.GroupVersionKind().Group == "core.hybridapp.io" && res.GroupVersionKind().Kind == "Deployable" {
+		if res.GroupVersionKind().Group == hdplGVK.Group && res.GroupVersionKind().Kind == hdplGVK.Kind {
 			hasHdpl = true
 			break
 		}
