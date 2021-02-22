@@ -238,7 +238,7 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 		}
 	}
 	if hasHdpl {
-		err = r.updateAppRelationships(app)
+		err = r.updateAppRelationships(app, resources)
 	}
 
 	return err
@@ -281,9 +281,9 @@ func (r *ReconcileApplication) objectsDeepEquals(oldStatus []sigappv1beta1.Objec
 
 // updateAppRelationships updates the configmap resources related to the Hybrid
 // App
-func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Application) error {
+func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Application, resources []*unstructured.Unstructured) error {
 	// build the new configmap
-	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app)
+	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app, resources)
 
 	// Update existing configmap or else create new
 	// Configmap will have same name and namespace as associated application
@@ -310,12 +310,7 @@ func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Applica
 
 // buildRelationshipsConfigmap builds a configmap of resources related to the
 // app
-func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Application) (*corev1.ConfigMap, error) {
-
-	resources, err := r.fetchApplicationComponents(app)
-	if err != nil {
-		return nil, err
-	}
+func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Application, resources []*unstructured.Unstructured) (*corev1.ConfigMap, error) {
 
 	relationships := []Relationship{}
 	for _, resource := range resources {
@@ -325,7 +320,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 			Namespace: resource.GetNamespace(),
 		}
 		hdpl := hdplv1alpha1.Deployable{}
-		err = r.Get(context.TODO(), hdplKey, &hdpl)
+		err := r.Get(context.TODO(), hdplKey, &hdpl)
 		if err != nil {
 			continue
 		}
