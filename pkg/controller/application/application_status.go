@@ -234,8 +234,6 @@ func (r *ReconcileApplication) updateApplicationStatus(app *sigappv1beta1.Applic
 	// Build configmap of resources related to application if it has hybrid
 	// deployables
 	hasHdpl := false
-	// TODO: is this check sufficient?
-	// if app.Spec.ComponentGroupKinds[0].Group == "core.hybridapp.io" && app.Spec.ComponentGroupKinds[0].Kind == "Deployable"
 	for _, res := range resources {
 		if res.GroupVersionKind().Group == "core.hybridapp.io" && res.GroupVersionKind().Kind == "Deployable" {
 			hasHdpl = true
