@@ -293,6 +293,7 @@ func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Applica
 	// build the new configmap
 	relationshipsConfigmap, err := r.buildRelationshipsConfigmap(app, resources)
 	if err != nil {
+		klog.Error("Error occurred while building relationships configmap: ", err)
 		return err
 	}
 
@@ -307,16 +308,23 @@ func (r *ReconcileApplication) updateAppRelationships(app *sigappv1beta1.Applica
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err = r.Create(context.TODO(), relationshipsConfigmap)
-
-			return err
+			if err != nil {
+				klog.Error("Error occurred while creating relationships configmap: ", err)
+				return err
+			}
+			return nil
 		}
+		klog.Error("Error occurred while getting relationships configmap: ", err)
 		return err
 	}
 
 	// Update existing configmap
 	err = r.Update(context.TODO(), relationshipsConfigmap)
-
-	return err
+	if err != nil {
+		klog.Error("Error occurred while updating relationships configmap: ", err)
+		return err
+	}
+	return nil
 }
 
 // buildRelationshipsConfigmap builds a configmap of resources related to the
@@ -336,6 +344,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 			if errors.IsNotFound(err) {
 				continue
 			}
+			klog.Error("Error occurred while getting hdpl: ", err)
 			return nil, err
 		}
 		relationships = append(relationships, Relationship{
@@ -359,6 +368,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 		// recursively find relationships of each resource
 		relationships, err = r.addHdplRelationships(&hdpl, relationships)
 		if err != nil {
+			klog.Error("Error occurred while adding hdpl relationships: ", err)
 			return nil, err
 		}
 
@@ -367,7 +377,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 	// Convert into json and then into string map to store in configmap data
 	relationshipsByteArray, err := json.Marshal(relationships)
 	if err != nil {
-		klog.Info("Failed to marshal object with error", err)
+		klog.Error("Failed to marshal object with error: ", err)
 		return nil, err
 	}
 	relationshipsMap := map[string]string{"relationships": string(relationshipsByteArray)}
@@ -399,6 +409,7 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 		if errors.IsNotFound(err) {
 			return relationships, nil
 		}
+		klog.Error("Error occurred while getting hpr: ", err)
 		return relationships, err
 	}
 	relationships = append(relationships, Relationship{
@@ -428,6 +439,7 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 				if errors.IsNotFound(err) {
 					continue
 				}
+				klog.Error("Error occurred while getting deployable list: ", err)
 				return relationships, err
 			}
 			for _, dpl := range dplList.Items {
@@ -461,6 +473,7 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 					if errors.IsNotFound(err) {
 						continue
 					}
+					klog.Error("Error occurred while getting vm list: ", err)
 					return relationships, err
 				}
 				for _, vm := range vmList.Items {
