@@ -337,7 +337,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 			SourceNamespace:  app.GetNamespace(),
 			SourceApiGroup:   app.GroupVersionKind().Group,
 			SourceApiVersion: app.GroupVersionKind().Version,
-			SourceKind:       "application",
+			SourceKind:       app.GroupVersionKind().Kind,
 			SourceName:       app.GetName(),
 			Dest:             "k8s",
 			DestCluster:      "local-cluster",
@@ -405,9 +405,9 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 		Dest:             "k8s",
 		DestCluster:      "local-cluster",
 		DestNamespace:    hpr.GetNamespace(),
-		DestApiGroup:     "core.hybridapp.io",
-		DestApiVersion:   "v1alpha1",
-		DestKind:         "PlacementRule",
+		DestApiGroup:     hpr.GroupVersionKind().Group,
+		DestApiVersion:   hpr.GroupVersionKind().Version,
+		DestKind:         hpr.GroupVersionKind().Kind,
 		DestName:         hpr.GetName(),
 	})
 
