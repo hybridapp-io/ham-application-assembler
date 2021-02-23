@@ -461,6 +461,13 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 						DestKind:         dpl.GroupVersionKind().Kind,
 						DestName:         dpl.GetName(),
 					})
+
+					// Get resources related to Deployable
+					relationships, err = r.addDeployableRelationships(&dpl, relationships)
+					if err != nil {
+						klog.Error("Error occurred while adding deployable relationships: ", err)
+						return relationships, err
+					}
 				}
 			}
 		} else if decision.Kind == "Deployer" {
@@ -495,6 +502,37 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 			}
 		}
 	}
+
+	return relationships, nil
+}
+
+// addDeployableRelationships adds resources that are related to a Deployable
+// to the relationships configmap for the Hybrid App
+func (r *ReconcileApplication) addDeployableRelationships(dpl *dplv1.Deployable, relationships []Relationship) ([]Relationship, error) {
+	// Parse byte array in Template.Raw to struct
+	tmpl := unstructured.Unstructured{}
+	err := json.Unmarshal(dpl.Spec.Template.Raw, &tmpl)
+	if err != nil {
+		klog.Error("Failed to unmarshal object:\n", string(dpl.Spec.Template.Raw), " with error ", err)
+		return relationships, err
+	}
+	relationships = append(relationships, Relationship{
+		Label:            "uses",
+		Source:           "k8s",
+		SourceCluster:    "local-cluster",
+		SourceNamespace:  dpl.GetNamespace(),
+		SourceApiGroup:   dpl.GroupVersionKind().Group,
+		SourceApiVersion: dpl.GroupVersionKind().Version,
+		SourceKind:       dpl.GroupVersionKind().Kind,
+		SourceName:       dpl.GetName(),
+		Dest:             "k8s",
+		DestCluster:      dpl.GetNamespace(),
+		DestNamespace:    tmpl.GetNamespace(),
+		DestApiGroup:     tmpl.GroupVersionKind().Group,
+		DestApiVersion:   tmpl.GroupVersionKind().Version,
+		DestKind:         tmpl.GroupVersionKind().Kind,
+		DestName:         tmpl.GetName(),
+	})
 
 	return relationships, nil
 }
