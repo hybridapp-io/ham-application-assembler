@@ -444,7 +444,6 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	}()
 
 	// Update decision of pr
-	g.Expect(c.Get(context.TODO(), hpr1Key, hpr1)).NotTo(HaveOccurred())
 	hpr1.Status.Decisions = []corev1.ObjectReference{
 		{
 			Namespace:  mc1Name,
@@ -483,7 +482,6 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	}()
 
 	// Update decision of pr
-	g.Expect(c.Get(context.TODO(), hpr2Key, hpr2)).NotTo(HaveOccurred())
 	hpr2.Status.Decisions = []corev1.ObjectReference{
 		{
 			Namespace:  imDeployerNamespace,
