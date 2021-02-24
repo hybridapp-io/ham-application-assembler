@@ -245,12 +245,8 @@ var (
 	}
 
 	// hybrid deployable for remote resource
-	hpr1Name      = "hpr-1"
-	hpr1Namespace = "default"
-	hpr1Key       = types.NamespacedName{
-		Name:      hpr1Name,
-		Namespace: hpr1Namespace,
-	}
+	hpr1Name        = "hpr-1"
+	hpr1Namespace   = "default"
 	mc1DeployerType = "kubernetes"
 	hpr1            = &prulev1alpha1.PlacementRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -296,30 +292,11 @@ var (
 	// hybrid deployable using deployer for ifrastructure management
 	imDeployerName      = "imDeployer"
 	imDeployerNamespace = "default"
-	imDeployerKey       = types.NamespacedName{
-		Name:      imDeployerName,
-		Namespace: imDeployerNamespace,
-	}
-	imDeployerType = "ibminfra"
-
-	imDeployer = &prulev1alpha1.Deployer{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      imDeployerKey.Name,
-			Namespace: imDeployerKey.Namespace,
-			Labels:    map[string]string{"deployer-type": imDeployerType},
-		},
-		Spec: prulev1alpha1.DeployerSpec{
-			Type: imDeployerType,
-		},
-	}
+	imDeployerType      = "ibminfra"
 
 	hpr2Name      = "hpr-2"
 	hpr2Namespace = "default"
-	hpr2Key       = types.NamespacedName{
-		Name:      hpr2Name,
-		Namespace: hpr2Namespace,
-	}
-	hpr2 = &prulev1alpha1.PlacementRule{
+	hpr2          = &prulev1alpha1.PlacementRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hpr2Name,
 			Namespace: hpr2Namespace,

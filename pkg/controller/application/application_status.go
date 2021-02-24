@@ -72,15 +72,15 @@ type Relationship struct {
 	Source           string `json:"source"`
 	SourceCluster    string `json:"sourceCluster"`
 	SourceNamespace  string `json:"sourceNamespace"`
-	SourceApiGroup   string `json:"sourceApiGroup"`
-	SourceApiVersion string `json:"sourceApiVersion"`
+	SourceAPIGroup   string `json:"sourceApiGroup"`
+	SourceAPIVersion string `json:"sourceApiVersion"`
 	SourceKind       string `json:"sourceKind"`
 	SourceName       string `json:"sourceName"`
 	Dest             string `json:"dest"`
 	DestCluster      string `json:"destCluster,omitempty"`
 	DestNamespace    string `json:"destNamespace,omitempty"`
-	DestApiGroup     string `json:"destApiGroup,omitempty"`
-	DestApiVersion   string `json:"destApiVersion,omitempty"`
+	DestAPIGroup     string `json:"destApiGroup,omitempty"`
+	DestAPIVersion   string `json:"destApiVersion,omitempty"`
 	DestKind         string `json:"destKind,omitempty"`
 	DestName         string `json:"destName,omitempty"`
 	DestUID          string `json:"destUID,omitempty"`
@@ -356,15 +356,15 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
 			SourceNamespace:  app.GetNamespace(),
-			SourceApiGroup:   app.GroupVersionKind().Group,
-			SourceApiVersion: app.GroupVersionKind().Version,
+			SourceAPIGroup:   app.GroupVersionKind().Group,
+			SourceAPIVersion: app.GroupVersionKind().Version,
 			SourceKind:       app.GroupVersionKind().Kind,
 			SourceName:       app.GetName(),
 			Dest:             "k8s",
 			DestCluster:      "local-cluster",
 			DestNamespace:    resource.GetNamespace(),
-			DestApiGroup:     resource.GroupVersionKind().Group,
-			DestApiVersion:   resource.GroupVersionKind().Version,
+			DestAPIGroup:     resource.GroupVersionKind().Group,
+			DestAPIVersion:   resource.GroupVersionKind().Version,
 			DestKind:         resource.GroupVersionKind().Kind,
 			DestName:         resource.GetName(),
 		})
@@ -424,15 +424,15 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 		Source:           "k8s",
 		SourceCluster:    "local-cluster",
 		SourceNamespace:  hdpl.GetNamespace(),
-		SourceApiGroup:   hdpl.GroupVersionKind().Group,
-		SourceApiVersion: hdpl.GroupVersionKind().Version,
+		SourceAPIGroup:   hdpl.GroupVersionKind().Group,
+		SourceAPIVersion: hdpl.GroupVersionKind().Version,
 		SourceKind:       hdpl.GroupVersionKind().Kind,
 		SourceName:       hdpl.GetName(),
 		Dest:             "k8s",
 		DestCluster:      "local-cluster",
 		DestNamespace:    hpr.GetNamespace(),
-		DestApiGroup:     hpr.GroupVersionKind().Group,
-		DestApiVersion:   hpr.GroupVersionKind().Version,
+		DestAPIGroup:     hpr.GroupVersionKind().Group,
+		DestAPIVersion:   hpr.GroupVersionKind().Version,
 		DestKind:         hpr.GroupVersionKind().Kind,
 		DestName:         hpr.GetName(),
 	})
@@ -456,15 +456,15 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 						Source:           "k8s",
 						SourceCluster:    "local-cluster",
 						SourceNamespace:  hdpl.GetNamespace(),
-						SourceApiGroup:   hdpl.GroupVersionKind().Group,
-						SourceApiVersion: hdpl.GroupVersionKind().Version,
+						SourceAPIGroup:   hdpl.GroupVersionKind().Group,
+						SourceAPIVersion: hdpl.GroupVersionKind().Version,
 						SourceKind:       hdpl.GroupVersionKind().Kind,
 						SourceName:       hdpl.GetName(),
 						Dest:             "k8s",
 						DestCluster:      "local-cluster",
 						DestNamespace:    dpl.GetNamespace(),
-						DestApiGroup:     dpl.GroupVersionKind().Group,
-						DestApiVersion:   dpl.GroupVersionKind().Version,
+						DestAPIGroup:     dpl.GroupVersionKind().Group,
+						DestAPIVersion:   dpl.GroupVersionKind().Version,
 						DestKind:         dpl.GroupVersionKind().Kind,
 						DestName:         dpl.GetName(),
 					})
@@ -497,8 +497,8 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 							Source:           "k8s",
 							SourceCluster:    "local-cluster",
 							SourceNamespace:  hdpl.GetNamespace(),
-							SourceApiGroup:   hdpl.GroupVersionKind().Group,
-							SourceApiVersion: hdpl.GroupVersionKind().Version,
+							SourceAPIGroup:   hdpl.GroupVersionKind().Group,
+							SourceAPIVersion: hdpl.GroupVersionKind().Version,
 							SourceKind:       hdpl.GroupVersionKind().Kind,
 							SourceName:       hdpl.GetName(),
 							Dest:             "im",
@@ -528,15 +528,15 @@ func (r *ReconcileApplication) addDeployableRelationships(dpl *dplv1.Deployable,
 		Source:           "k8s",
 		SourceCluster:    "local-cluster",
 		SourceNamespace:  dpl.GetNamespace(),
-		SourceApiGroup:   dpl.GroupVersionKind().Group,
-		SourceApiVersion: dpl.GroupVersionKind().Version,
+		SourceAPIGroup:   dpl.GroupVersionKind().Group,
+		SourceAPIVersion: dpl.GroupVersionKind().Version,
 		SourceKind:       dpl.GroupVersionKind().Kind,
 		SourceName:       dpl.GetName(),
 		Dest:             "k8s",
 		DestCluster:      dpl.GetNamespace(),
 		DestNamespace:    tmpl.GetNamespace(),
-		DestApiGroup:     tmpl.GroupVersionKind().Group,
-		DestApiVersion:   tmpl.GroupVersionKind().Version,
+		DestAPIGroup:     tmpl.GroupVersionKind().Group,
+		DestAPIVersion:   tmpl.GroupVersionKind().Version,
 		DestKind:         tmpl.GroupVersionKind().Kind,
 		DestName:         tmpl.GetName(),
 	})
