@@ -551,7 +551,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 
 	// Verify if all relationships exist
 	expectedRelationships := []Relationship{
-		Relationship{
+		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
@@ -568,7 +568,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestKind:         toolsv1alpha1.HybridDeployableGK.Kind,
 			DestName:         hdpl1.GetName(),
 		},
-		Relationship{
+		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
@@ -585,7 +585,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestKind:         toolsv1alpha1.HybridDeployableGK.Kind,
 			DestName:         hdpl2.GetName(),
 		},
-		Relationship{
+		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
@@ -602,7 +602,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestKind:         "PlacementRule",
 			DestName:         hpr1.GetName(),
 		},
-		Relationship{
+		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
@@ -619,7 +619,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestKind:         toolsv1alpha1.DeployableGVK.Kind,
 			DestName:         dpl1.GetName(),
 		},
-		Relationship{
+		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
@@ -636,7 +636,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestKind:         mc1Service.GroupVersionKind().Kind,
 			DestName:         mc1Service.GetName(),
 		},
-		Relationship{
+		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
@@ -653,7 +653,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			DestKind:         "PlacementRule",
 			DestName:         hpr2.GetName(),
 		},
-		Relationship{
+		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
