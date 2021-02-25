@@ -68,7 +68,7 @@ func TestCreateDeployables(t *testing.T) {
 			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
 				ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
 					{
-						Cluster: mc.Namespace + "/" + mc.Name,
+						Cluster: mc.Name,
 						Components: []*corev1.ObjectReference{
 							{
 								APIVersion: mcService.APIVersion,
@@ -179,7 +179,7 @@ func TestDeployableTemplates(t *testing.T) {
 			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
 				ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
 					{
-						Cluster: mc.Namespace + "/" + mc.Name,
+						Cluster: mc.Name,
 						Components: []*corev1.ObjectReference{
 							{
 								APIVersion: mcServiceDeployable.APIVersion,

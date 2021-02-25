@@ -23,10 +23,10 @@ import (
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -43,10 +43,9 @@ func TestHPRTargets(t *testing.T) {
 				Name: mc1Name,
 			},
 		}
-		mc1 = &clusterv1alpha1.Cluster{
+		mc1 = &managedclusterv1.ManagedCluster{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      mc1Name,
-				Namespace: mc1Name,
+				Name: mc1Name,
 			},
 		}
 
@@ -56,10 +55,9 @@ func TestHPRTargets(t *testing.T) {
 				Name: mc2Name,
 			},
 		}
-		mc2 = &clusterv1alpha1.Cluster{
+		mc2 = &managedclusterv1.ManagedCluster{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      mc2Name,
-				Namespace: mc2Name,
+				Name: mc2Name,
 			},
 		}
 
@@ -89,7 +87,7 @@ func TestHPRTargets(t *testing.T) {
 			Spec: toolsv1alpha1.ApplicationAssemblerSpec{
 				ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
 					{
-						Cluster: mc1.Namespace + "/" + mc1.Name,
+						Cluster: mc1.Name,
 						Components: []*corev1.ObjectReference{
 							{
 								APIVersion: mcService.APIVersion,
@@ -100,7 +98,7 @@ func TestHPRTargets(t *testing.T) {
 						},
 					},
 					{
-						Cluster: mc2.Namespace + "/" + mc2.Name,
+						Cluster: mc2.Name,
 						Components: []*corev1.ObjectReference{
 							{
 								APIVersion: mcService.APIVersion,

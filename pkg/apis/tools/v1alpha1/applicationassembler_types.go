@@ -49,8 +49,7 @@ var (
 	// ClustersIgnoredForDiscovery represents an array of clusters which will not be included in the discovery flow
 	ClustersIgnoredForDiscovery = []corev1.ObjectReference{
 		{
-			Name:      LocalClusterName,
-			Namespace: LocalClusterName,
+			Name: LocalClusterName,
 		},
 	}
 )

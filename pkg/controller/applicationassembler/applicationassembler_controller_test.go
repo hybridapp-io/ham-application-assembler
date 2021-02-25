@@ -23,11 +23,11 @@ import (
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -54,10 +54,9 @@ var (
 	}
 
 	mcName = "mc"
-	mc     = &clusterv1alpha1.Cluster{
+	mc     = &managedclusterv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mcName,
-			Namespace: mcName,
+			Name: mcName,
 		},
 	}
 	mcNS = corev1.Namespace{

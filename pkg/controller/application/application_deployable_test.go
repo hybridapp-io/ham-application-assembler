@@ -228,7 +228,6 @@ func TestApplicationDeployableTarget(t *testing.T) {
 	}()
 	cl1ObjReference := corev1.ObjectReference{
 		Name:       cl1.Name,
-		Namespace:  cl1.Namespace,
 		Kind:       cl1.Kind,
 		APIVersion: cl1.APIVersion,
 	}
@@ -264,6 +263,6 @@ func TestApplicationDeployableTarget(t *testing.T) {
 	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
 	g.Expect(dplList.Items).To(HaveLen(1))
 
-	g.Expect(dplList.Items[0].Namespace).To(Equal(cl1.Namespace))
+	g.Expect(dplList.Items[0].Namespace).To(Equal(cl1.Name))
 
 }

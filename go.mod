@@ -3,10 +3,11 @@ module github.com/hybridapp-io/ham-application-assembler
 go 1.13
 
 require (
-	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20201103184739-393bdf95ab1b
-	github.com/hybridapp-io/ham-placement v0.0.0-20201028202429-ccc09cf8eb2b
+	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20210225203835-f5a1914e4442
+	github.com/hybridapp-io/ham-placement v0.0.0-20210225195735-3057d58bb101
 	github.com/kubernetes-sigs/application v0.8.1
-	github.com/onsi/gomega v1.9.0
+	github.com/onsi/gomega v1.10.5
+	github.com/open-cluster-management/api v0.0.0-20200610161514-939cead3902c
 	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200721140654-267157672e39
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.0.1-2020-05-28-18-29-00.0.20200603172904-efde26079087
 	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-12-21-17-19.0.20200721224621-79fd9d450d82
@@ -17,7 +18,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.18.2
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
-	k8s.io/cluster-registry v0.0.6
 	k8s.io/klog v1.0.0
 	sigs.k8s.io/controller-runtime v0.6.0
 )

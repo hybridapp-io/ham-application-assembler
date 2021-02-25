@@ -20,12 +20,12 @@ import (
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -81,7 +81,7 @@ func (r *ReconcileApplication) reconcileAppDeployables(app *sigappv1beta1.Applic
 func (r *ReconcileApplication) reconcileAppDeployableOnAllTargets(app *sigappv1beta1.Application) error {
 
 	// retrieve a list of clusters
-	clusterList := &clusterv1alpha1.ClusterList{}
+	clusterList := &managedclusterv1.ManagedClusterList{}
 	err := r.List(context.TODO(), clusterList)
 	if err != nil {
 		klog.Error("Failed to retrieve the list of managed clusters ")
@@ -90,16 +90,16 @@ func (r *ReconcileApplication) reconcileAppDeployableOnAllTargets(app *sigappv1b
 	for _, cluster := range clusterList.Items {
 		ignored := false
 		for _, clObjRef := range toolsv1alpha1.ClustersIgnoredForDiscovery {
-			if clObjRef.Name == cluster.Name && clObjRef.Namespace == cluster.Namespace {
+			if clObjRef.Name == cluster.Name {
 				ignored = true
 				break
 			}
 		}
 		// process only clusters which are not in the ignored list
 		if !ignored {
-			err = r.reconcileAppDeployable(app, cluster.Namespace)
+			err = r.reconcileAppDeployable(app, cluster.Name)
 			if err != nil {
-				klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
+				klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Name)
 				return err
 			}
 		}
@@ -117,27 +117,26 @@ func (r *ReconcileApplication) reconcileAppDeployableOnTarget(app *sigappv1beta1
 		klog.Error("Unable to unmarshal the value of the annotation ", toolsv1alpha1.AnnotationDiscoveryTarget, " with error: ", err)
 		return err
 	}
-	cluster := &clusterv1alpha1.Cluster{}
+	cluster := &managedclusterv1.ManagedCluster{}
 	if (targetObjectReference.Kind != "" && targetObjectReference.Kind != cluster.Kind) ||
 		(targetObjectReference.APIVersion != "" && targetObjectReference.APIVersion != cluster.APIVersion) {
 		klog.Error("Unsupported target kind ", targetObjectReference.Kind, " and version ", targetObjectReference.APIVersion)
 		return nil
 	}
 	cluster.Name = targetObjectReference.Name
-	cluster.Namespace = targetObjectReference.Namespace
 
 	ignored := false
 	for _, clObjRef := range toolsv1alpha1.ClustersIgnoredForDiscovery {
-		if clObjRef.Name == cluster.Name && clObjRef.Namespace == cluster.Namespace {
+		if clObjRef.Name == cluster.Name {
 			ignored = true
 			break
 		}
 	}
 	// process only clusters which are not in the ignored list
 	if !ignored {
-		err := r.reconcileAppDeployable(app, cluster.Namespace)
+		err := r.reconcileAppDeployable(app, cluster.Name)
 		if err != nil {
-			klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
+			klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Name)
 			return err
 		}
 	}
@@ -148,7 +147,7 @@ func (r *ReconcileApplication) reconcileAppDeployableOnTarget(app *sigappv1beta1
 func (r *ReconcileApplication) deleteApplicationDeployables(appKey types.NamespacedName) error {
 
 	// retrieve a list of clusters
-	clusterList := &clusterv1alpha1.ClusterList{}
+	clusterList := &managedclusterv1.ManagedClusterList{}
 
 	err := r.List(context.TODO(), clusterList)
 	if err != nil {
@@ -156,7 +155,7 @@ func (r *ReconcileApplication) deleteApplicationDeployables(appKey types.Namespa
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		dpl, err := r.locateAppDeployable(appKey, cluster.Namespace)
+		dpl, err := r.locateAppDeployable(appKey, cluster.Name)
 		if err != nil {
 			klog.Error("Failed to locate application deployable with error: ", err)
 			return err

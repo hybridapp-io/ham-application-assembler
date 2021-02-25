@@ -18,11 +18,12 @@ import (
 	"context"
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
+	t "k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
@@ -64,18 +65,22 @@ func (r *ReconcileApplication) buildAssemblerComponents(appasm *toolsv1alpha1.Ap
 			APIVersion: resource.GetAPIVersion(),
 		}
 		if or.APIVersion == dplv1.SchemeGroupVersion.String() && or.Kind == toolsv1alpha1.DeployableGVK.Kind {
+			clusterName := resource.GetNamespace()
 			// retrieve the cluster
-			clusters := &clusterv1alpha1.ClusterList{}
-			err := r.List(context.TODO(), clusters, &client.ListOptions{Namespace: or.Namespace})
+			clusterKey := t.NamespacedName{
+				Name: clusterName,
+			}
+			cluster := &managedclusterv1.ManagedCluster{}
+			err := r.Get(context.TODO(), clusterKey, cluster)
 			if err != nil {
-				klog.Error("Failed to retrieve the list of managed clusters in namespace ", or.Namespace)
-				return err
+				if errors.IsNotFound(err) {
+					klog.Error("Managed cluster with name ", clusterName, " does not exist. ")
+					continue
+				} else {
+					klog.Error("Failed to retrieve the managed cluster with name ", clusterName, " with error: ", err)
+					return err
+				}
 			}
-			if len(clusters.Items) == 0 {
-				klog.Error("No managed clusters in namespace ", or.Namespace)
-				continue
-			}
-			clusterName := clusters.Items[0].Namespace + "/" + clusters.Items[0].Name
 			if mcComponents == nil {
 				mcComponents = make(map[string][]*corev1.ObjectReference)
 			}

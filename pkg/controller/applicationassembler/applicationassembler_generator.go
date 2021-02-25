@@ -89,29 +89,16 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *tool
 	}
 
 	for _, managedCluster := range instance.Spec.ManagedClustersComponents {
-		cluster := managedCluster.Cluster
-		var clusterKey types.NamespacedName
-		if len(strings.Split(cluster, "/")) > 1 {
-			clusterKey = types.NamespacedName{
-				Namespace: strings.Split(cluster, "/")[0],
-				Name:      strings.Split(cluster, "/")[1],
-			}
-		} else {
-			// no namespace, use cluster name as namespace
-			clusterKey = types.NamespacedName{
-				Namespace: strings.Split(cluster, "/")[0],
-				Name:      strings.Split(cluster, "/")[0],
-			}
-		}
+		clusterName := managedCluster.Cluster
 		for _, obj := range managedCluster.Components {
 			if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.DeployableGVK {
-				if err = r.generateHybridDeployableFromDeployable(instance, obj, appID, &clusterKey); err != nil {
+				if err = r.generateHybridDeployableFromDeployable(instance, obj, appID, clusterName); err != nil {
 					klog.Error("Failed to generate hybrid deployable from deployable for ", obj.Namespace+"/"+obj.Name)
 					return err
 				}
 
 			} else {
-				if err = r.generateHybridDeployableFromObjectInManagedCluster(instance, obj, appID, &clusterKey); err != nil {
+				if err = r.generateHybridDeployableFromObjectInManagedCluster(instance, obj, appID, clusterName); err != nil {
 					klog.Error("Failed to generate hybrid deployable from object in managed cluster for ", obj.Namespace+"/"+obj.Name)
 					return err
 				}
@@ -147,13 +134,13 @@ func (r *ReconcileApplicationAssembler) patchObject(hdpl *hdplv1alpha1.Deployabl
 }
 
 func (r *ReconcileApplicationAssembler) genHybridDeployableName(instance *toolsv1alpha1.ApplicationAssembler,
-	metaobj *corev1.ObjectReference, cluster *types.NamespacedName) string {
+	metaobj *corev1.ObjectReference, clusterName string) string {
 	if instance == nil || metaobj == nil {
 		return ""
 	}
 
-	if cluster != nil {
-		return utils.TruncateString(strings.ToLower(cluster.Name+"-"+metaobj.Kind+"-"+
+	if clusterName != "" {
+		return utils.TruncateString(strings.ToLower(clusterName+"-"+metaobj.Kind+"-"+
 			metaobj.Namespace+"-"+metaobj.Name), toolsv1alpha1.GeneratedDeployableNameLength)
 	}
 	return utils.TruncateString(strings.ToLower(metaobj.Kind+"-"+metaobj.Namespace+

@@ -59,7 +59,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	var key types.NamespacedName
-	key.Name = r.genHybridDeployableName(instance, objref, nil)
+	key.Name = r.genHybridDeployableName(instance, objref, "")
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}
 
@@ -96,7 +96,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	hdpl.Spec.HybridTemplates = htpls
-	err = r.genPlacementRuleForHybridDeployable(hdpl, &deployer.Spec.Type, nil)
+	err = r.genPlacementRuleForHybridDeployable(hdpl, &deployer.Spec.Type, "")
 	if err != nil {
 		klog.Error("Failed to generate placementrule for hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
 		return err
@@ -123,10 +123,10 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 }
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInManagedCluster(instance *toolsv1alpha1.ApplicationAssembler,
-	obj *corev1.ObjectReference, appID string, cluster *types.NamespacedName) error {
+	obj *corev1.ObjectReference, appID string, clusterName string) error {
 
 	hdplKey := types.NamespacedName{
-		Name:      r.genHybridDeployableName(instance, obj, cluster),
+		Name:      r.genHybridDeployableName(instance, obj, clusterName),
 		Namespace: instance.Namespace,
 	}
 	hdpl := &hdplv1alpha1.Deployable{}
@@ -137,12 +137,12 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 			klog.Error("Failed to retrieve hybrid deployable ", hdplKey.String())
 			return err
 		}
-		hdpl.Name = r.genHybridDeployableName(instance, obj, cluster)
+		hdpl.Name = r.genHybridDeployableName(instance, obj, clusterName)
 		hdpl.Namespace = hdplKey.Namespace
 
 		dpl := &dplv1.Deployable{}
 		dpl.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
-		dpl.Namespace = cluster.Namespace
+		dpl.Namespace = clusterName
 		annotations := make(map[string]string)
 		annotations[hdplv1alpha1.AnnotationHybridDiscovery] = hdplv1alpha1.HybridDiscoveryEnabled
 		dpl.Annotations = annotations
@@ -157,7 +157,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		}
 		hdpl.Annotations = dpl.Annotations
 
-		return r.buildHybridDeployable(hdpl, dpl, appID, cluster)
+		return r.buildHybridDeployable(hdpl, dpl, appID, clusterName)
 	}
 
 	labels := hdpl.GetLabels()

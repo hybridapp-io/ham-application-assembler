@@ -438,10 +438,10 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 	})
 
 	for _, decision := range hpr.Status.Decisions {
-		if decision.Kind == "Cluster" {
+		if decision.Kind == "ManagedCluster" {
 			// Get related Deployables
 			dplList := &dplv1.DeployableList{}
-			err = r.List(context.TODO(), dplList, &client.ListOptions{Namespace: decision.Namespace})
+			err = r.List(context.TODO(), dplList, &client.ListOptions{Namespace: decision.Name})
 			if err != nil {
 				if errors.IsNotFound(err) {
 					continue

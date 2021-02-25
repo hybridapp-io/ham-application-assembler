@@ -22,11 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -72,10 +72,9 @@ var (
 	mc1ServiceName = "mysql-svc-mc1"
 	mc2ServiceName = "webserver-svc-mc2"
 
-	mc1 = &clusterv1alpha1.Cluster{
+	mc1 = &managedclusterv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mc1Name,
-			Namespace: mc1Name,
+			Name: mc1Name,
 		},
 	}
 
@@ -127,10 +126,9 @@ var (
 		},
 	}
 
-	mc2 = &clusterv1alpha1.Cluster{
+	mc2 = &managedclusterv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mc2Name,
-			Namespace: mc2Name,
+			Name: mc2Name,
 		},
 	}
 
@@ -170,10 +168,9 @@ var (
 		},
 	}
 
-	localCluster = &clusterv1alpha1.Cluster{
+	localCluster = &managedclusterv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      localClusterName,
-			Namespace: localClusterName,
+			Name: localClusterName,
 		},
 	}
 

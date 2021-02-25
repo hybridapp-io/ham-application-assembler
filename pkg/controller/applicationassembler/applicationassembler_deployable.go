@@ -33,7 +33,7 @@ import (
 )
 
 func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(instance *toolsv1alpha1.ApplicationAssembler,
-	obj *corev1.ObjectReference, appID string, cluster *types.NamespacedName) error {
+	obj *corev1.ObjectReference, appID string, clusterName string) error {
 	var err error
 
 	dpl := &dplv1.Deployable{}
@@ -64,9 +64,9 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 			Kind:      templateobj.GetKind(),
 			Namespace: templateobj.GetNamespace(),
 			Name:      templateobj.GetName(),
-		}, cluster)
+		}, clusterName)
 	} else {
-		key.Name = r.genHybridDeployableName(instance, obj, cluster)
+		key.Name = r.genHybridDeployableName(instance, obj, clusterName)
 	}
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}
@@ -86,11 +86,11 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		klog.Error("Failed to patch deployable : ", dpl.Namespace+"/"+dpl.Name, " with error: ", err)
 		return err
 	}
-	return r.buildHybridDeployable(hdpl, dpl, appID, cluster)
+	return r.buildHybridDeployable(hdpl, dpl, appID, clusterName)
 }
 
 func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1.Deployable, dpl *dplv1.Deployable,
-	appID string, cluster *types.NamespacedName) error {
+	appID string, clusterName string) error {
 
 	newtpl := &hdplv1alpha1.HybridTemplate{}
 	newtpl.DeployerType = hdplv1alpha1.DefaultDeployerType
@@ -122,7 +122,7 @@ func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1
 
 	hdpl.Spec.HybridTemplates = htpls
 
-	err := r.genPlacementRuleForHybridDeployable(hdpl, nil, cluster)
+	err := r.genPlacementRuleForHybridDeployable(hdpl, nil, clusterName)
 	if err != nil {
 		klog.Error("Failed to generate placementrule for hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
 		return err
