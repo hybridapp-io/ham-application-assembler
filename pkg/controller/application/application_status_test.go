@@ -667,14 +667,13 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 
 	// Need to convert the relationships from string to byte array to array of
 	// structs
-	relationshipsContainer := RelationshipsContainer{}
+	actualRelationships := []Relationship{}
 	relationshipsByteArray := []byte(relationshipsCM.Data["relationships"])
-	err = json.Unmarshal(relationshipsByteArray, &relationshipsContainer)
+	err = json.Unmarshal(relationshipsByteArray, &actualRelationships)
 	if err != nil {
 		klog.Error(err)
 		t.Fail()
 	}
-	actualRelationships := relationshipsContainer.Relationships
 
 	for _, relationship := range expectedRelationships {
 		g.Expect(relationship).To(BeElementOf(actualRelationships))
