@@ -86,10 +86,6 @@ type Relationship struct {
 	DestUID          string `json:"destUID,omitempty"`
 }
 
-type RelationshipsContainer struct {
-	Relationships []Relationship `json:"relationships"`
-}
-
 func (r *ReconcileApplication) isAppDiscoveryEnabled(app *sigappv1beta1.Application) bool {
 	if _, enabled := app.GetAnnotations()[hdplv1alpha1.AnnotationHybridDiscovery]; !enabled ||
 		app.GetAnnotations()[hdplv1alpha1.AnnotationHybridDiscovery] != hdplv1alpha1.HybridDiscoveryEnabled {
@@ -379,10 +375,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 	}
 
 	// Convert into json and then into string map to store in configmap data
-	relationshipsContainer := RelationshipsContainer{
-		Relationships: relationships,
-	}
-	relationshipsByteArray, err := json.Marshal(relationshipsContainer)
+	relationshipsByteArray, err := json.Marshal(relationships)
 	if err != nil {
 		klog.Error("Failed to marshal object with error: ", err)
 		return nil, err
