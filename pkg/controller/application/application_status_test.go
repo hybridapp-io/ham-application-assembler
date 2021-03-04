@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
@@ -511,13 +512,9 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	// Create the Application object and expect the deployables
 	app := hybridApp.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
-	defer func() {
-		if err = c.Delete(context.TODO(), app); err != nil {
-			klog.Error(err)
-			t.Fail()
-		}
-	}()
+
 	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	// the two hybrid deployables should now be in the app status
@@ -678,4 +675,15 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	for _, relationship := range expectedRelationships {
 		g.Expect(relationship).To(BeElementOf(actualRelationships))
 	}
+
+	// app cleanup should also delete the configmap
+	if err = c.Delete(context.TODO(), app); err != nil {
+		klog.Error(err)
+		t.Fail()
+	}
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	err = c.Get(context.TODO(), applicationKey, relationshipsCM)
+	g.Expect(errors.IsNotFound(err)).To(BeTrue())
 }
