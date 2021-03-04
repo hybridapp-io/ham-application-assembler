@@ -129,8 +129,15 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 			// as a finalizer on the app will get propagated through its deployable onto the managed cluster , which will
 			// prevent the app cleanup when the deployable is removed
 			depErr := r.deleteApplicationDeployables(request.NamespacedName)
+			if depErr != nil {
+				return reconcile.Result{}, depErr
+			}
+			depErr = r.deleteApplicationConfigmap(request.NamespacedName)
+			if depErr != nil {
+				return reconcile.Result{}, depErr
+			}
 
-			return reconcile.Result{}, depErr
+			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err

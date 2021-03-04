@@ -536,3 +536,27 @@ func (r *ReconcileApplication) addDeployableRelationships(dpl *dplv1.Deployable,
 
 	return relationships, nil
 }
+
+// deleteApplicationConfigmap looks for a configmap which is related to the
+// application and deletes it if it exists
+func (r *ReconcileApplication) deleteApplicationConfigmap(cmKey types.NamespacedName) error {
+	// Get application configmap if exists
+	appConfigmap := corev1.ConfigMap{}
+	err := r.Get(context.TODO(), cmKey, &appConfigmap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		klog.Error("Failed to get application configmap ", cmKey.Namespace+"/"+cmKey.Name+" with error: ", err)
+		return err
+	}
+
+	// Delete configmap
+	err = r.Delete(context.TODO(), &appConfigmap)
+	if err != nil {
+		klog.Error("Failed to delete application configmap ", cmKey.Namespace+"/"+cmKey.Name+" with error:", err)
+		return err
+	}
+
+	return nil
+}
