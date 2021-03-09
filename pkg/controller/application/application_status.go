@@ -181,6 +181,11 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 					klog.Info("Failed to unmarshal object with error", err)
 					return nil, err
 				}
+				// if not clusterscoped, then only accept resources in same
+				// namespace as app
+				if !r.isDiscoveryClusterScoped(app) && dplTemplate.GetNamespace() != app.Namespace {
+					continue
+				}
 				if (mapping != nil && dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping)) ||
 					(mapping == nil && dplTemplate.GetKind() == gk.Kind && utils.StripVersion(dplTemplate.GetAPIVersion()) == gk.Group) {
 
@@ -559,4 +564,15 @@ func (r *ReconcileApplication) deleteApplicationConfigmap(cmKey types.Namespaced
 	}
 
 	return nil
+}
+
+// isDiscoveryClusterScoped returns whether the hybrid-discovery-clusterscoped
+// annotation is set to true or false
+func (r *ReconcileApplication) isDiscoveryClusterScoped(app *sigappv1beta1.Application) bool {
+	if _, enabled := app.Annotations[hdplv1alpha1.AnnotationClusterScope]; !enabled ||
+		app.Annotations[hdplv1alpha1.AnnotationClusterScope] != "true" {
+		return false
+	}
+
+	return true
 }

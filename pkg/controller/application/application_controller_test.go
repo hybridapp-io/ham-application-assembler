@@ -192,6 +192,7 @@ var (
 			Labels:    selectorLabels,
 			Annotations: map[string]string{
 				hdplv1alpha1.AnnotationHybridDiscovery: hdplv1alpha1.HybridDiscoveryEnabled,
+				hdplv1alpha1.AnnotationClusterScope:    "true",
 			},
 		},
 		Spec: sigappv1beta1.ApplicationSpec{
@@ -220,6 +221,7 @@ var (
 			Labels:    selectorLabels,
 			Annotations: map[string]string{
 				hdplv1alpha1.AnnotationHybridDiscovery: hdplv1alpha1.HybridDiscoveryEnabled,
+				hdplv1alpha1.AnnotationClusterScope:    "true",
 			},
 		},
 		Spec: sigappv1beta1.ApplicationSpec{
@@ -622,6 +624,112 @@ func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
 			Namespace:  dpl1.Namespace,
 			Kind:       toolsv1alpha1.DeployableGVK.Kind,
 			Name:       dpl2.Name,
+			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+		},
+	}
+	for _, comp := range appasm.Spec.ManagedClustersComponents[0].Components {
+		g.Expect(comp).To(BeElementOf(components))
+	}
+}
+
+func Test_ApplicationAssemblerComponents_ClusterScoped_False(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	appReconciler := newReconciler(mgr)
+	appRecFn, appRequests := SetupTestReconcile(appReconciler)
+
+	g.Expect(add(mgr, appRecFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+
+	cl1 := mc1.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), cl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	dpl1Service := mc1Service.DeepCopy()
+	dpl1Service.Namespace = "default"
+
+	dpl1 := mc1ServiceDeployable.DeepCopy()
+	dpl1.Spec.Template.Object = dpl1Service
+
+	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// this deployable should not be picked up by the assembler as it's
+	// resource is not in the same namespace as the app
+	dpl2 := mc2ServiceDeployable.DeepCopy()
+	dpl2.Namespace = mc1Name
+	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// Create the Application object with create-assembler and clusterscoped
+	// annotations set to true
+	app := application.DeepCopy()
+	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.HybridDiscoveryCreateAssembler
+	app.Annotations[hdplv1alpha1.AnnotationClusterScope] = "false"
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// wait for reconcile to finish
+	g.Eventually(appRequests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	appasm := &toolsv1alpha1.ApplicationAssembler{}
+	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), appasm); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// validate the appasm components , 1 cluster components
+	g.Expect(appasm.Spec.ManagedClustersComponents).To(HaveLen(1))
+	// 1 component in the first cluster component
+	g.Expect(appasm.Spec.ManagedClustersComponents[0].Components).To(HaveLen(1))
+
+	components := []*corev1.ObjectReference{
+		{
+			Namespace:  dpl1.Namespace,
+			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Name:       dpl1.Name,
 			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
 		},
 	}
