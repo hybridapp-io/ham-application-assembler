@@ -442,7 +442,7 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 				klog.Error("Error occurred while getting deployable list: ", err)
 				return relationships, err
 			}
-			for _, dpl := range dplList.Items {
+			for i, dpl := range dplList.Items {
 				if dpl.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
 					relationships = append(relationships, Relationship{
 						Label:            "uses",
@@ -463,7 +463,7 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 					})
 
 					// Get resources related to Deployable
-					relationships, err = r.addDeployableRelationships(&dpl, relationships)
+					relationships, err = r.addDeployableRelationships(&dplList.Items[i], relationships)
 					if err != nil {
 						klog.Error("Error occurred while adding deployable relationships: ", err)
 						return relationships, err
