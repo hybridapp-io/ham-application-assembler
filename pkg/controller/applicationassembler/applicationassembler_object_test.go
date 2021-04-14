@@ -658,7 +658,8 @@ func TestComponentsNameLength(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	newLongName := hdplutils.TruncateString("very-long-name-exceeding-maximum-length-allowed-for-kubernetes-label-values", toolsv1alpha1.GeneratedDeployableNameLength)
+	newLongName := hdplutils.TruncateString("very-long-name-exceeding-maximum-length-allowed-for-kubernetes-label-values",
+		toolsv1alpha1.GeneratedDeployableNameLength)
 	svc := service.DeepCopy()
 	svc.Name = newLongName
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
