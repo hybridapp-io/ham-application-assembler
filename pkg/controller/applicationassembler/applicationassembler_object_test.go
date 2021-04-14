@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
-	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	hdplutils "github.com/hybridapp-io/ham-deployable-operator/pkg/utils"
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 )
@@ -658,7 +658,8 @@ func TestComponentsNameLength(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	newLongName := utils.TruncateString("very-long-name-exceeding-maximum-length-allowed-for-kubernetes-label-values", toolsv1alpha1.GeneratedDeployableNameLength)
+	newLongName := hdplutils.TruncateString("very-long-name-exceeding-maximum-length-allowed-for-kubernetes-label-values",
+		toolsv1alpha1.GeneratedDeployableNameLength)
 	svc := service.DeepCopy()
 	svc.Name = newLongName
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
@@ -691,7 +692,7 @@ func TestComponentsNameLength(t *testing.T) {
 	}()
 	g.Eventually(requests, timeout).Should(Receive())
 
-	hdplName := utils.TruncateString("service-"+service.Namespace+"-"+newLongName, toolsv1alpha1.GeneratedDeployableNameLength)
+	hdplName := hdplutils.TruncateString("service-"+service.Namespace+"-"+newLongName, toolsv1alpha1.GeneratedDeployableNameLength)
 	hybrddplyblKey := types.NamespacedName{Name: hdplName, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())

@@ -139,8 +139,12 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 					if list, err = r.dynamicClient.Resource(mapping.Resource).Namespace(app.Namespace).List(context.TODO(), metav1.ListOptions{
 						LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).String(),
 					}); err != nil {
-						klog.Error("Failed to retrieve the list of resources for GK ", gk)
-						return nil, err
+						if list, err = r.dynamicClient.Resource(mapping.Resource).List(context.TODO(), metav1.ListOptions{
+							LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).String(),
+						}); err != nil {
+							klog.Error("Failed to retrieve the list of resources for GK ", gk)
+							return nil, err
+						}
 					}
 				}
 			}
