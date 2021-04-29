@@ -16,6 +16,7 @@ package applicationassembler
 
 import (
 	"context"
+	"errors"
 	"reflect"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
@@ -71,10 +72,22 @@ func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl
 	if err = r.Create(context.TODO(), prule); err != nil {
 		klog.Error("Failed to create placement rule for hybrid deployable ", key.String(), " with error: ", err)
 		return err
-
 	}
-	if err = r.Status().Update(context.TODO(), prule); err != nil {
-		klog.Error("Failed to update placement rule status for hybrid deployable ", key.String(), " with error: ", err)
+
+	if clusterName != "" {
+		pruleKey := types.NamespacedName{Namespace: prule.Namespace, Name: prule.Name}
+
+		err := r.Get(context.TODO(), pruleKey, prule)
+		if err != nil {
+			klog.Error("Hybrid placement rule " + prule.Namespace + "/" + prule.Name + " not ready . Retrying...")
+			return err
+		}
+		if prule.Status.Decisions == nil || len(prule.Status.Decisions) == 0 {
+			return errors.New("No decisions yet reached for hybrid placement rule " + prule.Namespace + "/" + prule.Name + ". Retrying...")
+		}
+		if prule.Status.Decisions[0].Name != clusterName {
+			return errors.New("Expected placement decision (" + clusterName + ") was not found in the placement rule status. Retrying... ")
+		}
 	}
 
 	hdpl.Spec.Placement.PlacementRef = &corev1.ObjectReference{Name: prule.Name}

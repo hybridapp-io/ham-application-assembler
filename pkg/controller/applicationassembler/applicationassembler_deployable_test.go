@@ -193,7 +193,24 @@ func TestDeployableTemplates(t *testing.T) {
 			},
 		}
 	)
+	managedCluster := corev1.ObjectReference{
+		Name:       mcName,
+		APIVersion: "cluster.open-cluster-management.io/v1",
+	}
+	placementRuleName := "foo-app-foo-deployable"
+	placementRuleNamespace := applicationAssemblerKey.Namespace
 
+	placementRule := &prulev1alpha1.PlacementRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      placementRuleName,
+			Namespace: placementRuleNamespace,
+		},
+		Spec: prulev1alpha1.PlacementRuleSpec{
+			Targets: []corev1.ObjectReference{
+				managedCluster,
+			},
+		},
+	}
 	var c client.Client
 
 	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
@@ -213,6 +230,13 @@ func TestDeployableTemplates(t *testing.T) {
 	defer func() {
 		close(stopMgr)
 		mgrStopped.Wait()
+	}()
+	prule := placementRule.DeepCopy()
+	g.Expect(c.Create(context.TODO(), prule)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.Background(), prule); err != nil {
+			klog.Error(err)
+		}
 	}()
 
 	dpl1 := mcServiceDeployable.DeepCopy()

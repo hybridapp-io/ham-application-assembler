@@ -173,6 +173,7 @@ func TestHPRTargets(t *testing.T) {
 		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
 	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 	hprList := &prulev1alpha1.PlacementRuleList{}
 	g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 	g.Expect(hprList.Items).To(HaveLen(2))

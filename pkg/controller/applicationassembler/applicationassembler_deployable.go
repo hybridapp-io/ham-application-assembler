@@ -78,15 +78,20 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 			return err
 		}
 
+		// create the hdpl and placement rule if it does not exist
 		hdpl.Name = key.Name
 		hdpl.Namespace = key.Namespace
+		err = r.patchObject(hdpl, dpl)
+		if err != nil {
+			klog.Error("Failed to patch deployable : ", dpl.Namespace+"/"+dpl.Name, " with error: ", err)
+			return err
+		}
+		return r.buildHybridDeployable(hdpl, dpl, appID, clusterName)
+
 	}
-	err = r.patchObject(hdpl, dpl)
-	if err != nil {
-		klog.Error("Failed to patch deployable : ", dpl.Namespace+"/"+dpl.Name, " with error: ", err)
-		return err
-	}
-	return r.buildHybridDeployable(hdpl, dpl, appID, clusterName)
+
+	return nil
+
 }
 
 func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1.Deployable, dpl *dplv1.Deployable,
