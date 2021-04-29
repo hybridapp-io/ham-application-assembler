@@ -36,7 +36,6 @@ import (
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
-	prulev1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
 )
 
 var (
@@ -64,8 +63,8 @@ var (
 			Name: mcName,
 		},
 	}
-
-	deployableKey = types.NamespacedName{
+	placementRuleName = "foo-app-foo-deployable"
+	deployableKey     = types.NamespacedName{
 		Name:      "foo-deployable",
 		Namespace: mcName,
 	}
@@ -246,20 +245,20 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployableCreated(t *testing.T) {
 	g := NewWithT(t)
 
-	clusterName := "bar-cluster"
-	placementRuleName := "foo-app-foo-deployable"
+	managedCluster := corev1.ObjectReference{
+		Name:       mcName,
+		APIVersion: "cluster.open-cluster-management.io/v1",
+	}
 	placementRuleNamespace := applicationAssemblerKey.Namespace
 
-	placementRule := &prulev1.PlacementRule{
+	placementRule := &prulev1alpha1.PlacementRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      placementRuleName,
 			Namespace: placementRuleNamespace,
 		},
-		Spec: prulev1.PlacementRuleSpec{
-			GenericPlacementFields: prulev1.GenericPlacementFields{
-				ClusterSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{"name": clusterName},
-				},
+		Spec: prulev1alpha1.PlacementRuleSpec{
+			Targets: []corev1.ObjectReference{
+				managedCluster,
 			},
 		},
 	}
@@ -290,7 +289,6 @@ func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployable
 	defer func() {
 		if err = c.Delete(context.Background(), prule); err != nil {
 			klog.Error(err)
-			t.Fail()
 		}
 	}()
 
@@ -340,17 +338,18 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	clusterName := mcName
 	placementRuleName := "foo-app-foo-deployable"
 	placementRuleNamespace := applicationAssemblerKey.Namespace
-
-	placementRule := &prulev1.PlacementRule{
+	managedCluster := corev1.ObjectReference{
+		Name:       mcName,
+		APIVersion: "cluster.open-cluster-management.io/v1",
+	}
+	placementRule := &prulev1alpha1.PlacementRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      placementRuleName,
 			Namespace: placementRuleNamespace,
 		},
-		Spec: prulev1.PlacementRuleSpec{
-			GenericPlacementFields: prulev1.GenericPlacementFields{
-				ClusterSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{"name": clusterName},
-				},
+		Spec: prulev1alpha1.PlacementRuleSpec{
+			Targets: []corev1.ObjectReference{
+				managedCluster,
 			},
 		},
 	}
@@ -434,7 +433,6 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 	defer func() {
 		if err = c.Delete(context.Background(), prule); err != nil {
 			klog.Error(err)
-			t.Fail()
 		}
 	}()
 
