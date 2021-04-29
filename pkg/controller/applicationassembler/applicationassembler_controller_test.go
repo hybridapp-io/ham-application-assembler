@@ -262,7 +262,7 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 
 	pruleKey := types.NamespacedName{Name: deployableKey.Namespace + "-configmap-" + payload.Namespace + "-" +
 		payload.Name, Namespace: applicationAssemblerKey.Namespace}
-
+	prule = &prulev1alpha1.PlacementRule{}
 	g.Expect(c.Get(context.TODO(), pruleKey, prule)).NotTo(HaveOccurred())
 }
 
