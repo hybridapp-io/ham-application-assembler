@@ -179,7 +179,23 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 	var c client.Client
 
 	var expectedRequest = reconcile.Request{NamespacedName: applicationAssemblerKey}
+	managedCluster := corev1.ObjectReference{
+		Name:       mcName,
+		APIVersion: "cluster.open-cluster-management.io/v1",
+	}
+	placementRuleNamespace := applicationAssemblerKey.Namespace
 
+	placementRule := &prulev1alpha1.PlacementRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      placementRuleName,
+			Namespace: placementRuleNamespace,
+		},
+		Spec: prulev1alpha1.PlacementRuleSpec{
+			Targets: []corev1.ObjectReference{
+				managedCluster,
+			},
+		},
+	}
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
@@ -195,6 +211,14 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 	defer func() {
 		close(stopMgr)
 		mgrStopped.Wait()
+	}()
+
+	prule := placementRule.DeepCopy()
+	g.Expect(c.Create(context.TODO(), prule)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.Background(), prule); err != nil {
+			klog.Error(err)
+		}
 	}()
 
 	dplybl := deployable.DeepCopy()
@@ -238,7 +262,7 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 
 	pruleKey := types.NamespacedName{Name: deployableKey.Namespace + "-configmap-" + payload.Namespace + "-" +
 		payload.Name, Namespace: applicationAssemblerKey.Namespace}
-	prule := &prulev1alpha1.PlacementRule{}
+
 	g.Expect(c.Get(context.TODO(), pruleKey, prule)).NotTo(HaveOccurred())
 }
 
