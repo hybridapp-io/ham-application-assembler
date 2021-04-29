@@ -250,7 +250,6 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 		g.Expect(c.Delete(context.TODO(), instance)).NotTo(HaveOccurred())
 	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
-
 	appKey := types.NamespacedName{Name: applicationAssemblerKey.Name, Namespace: applicationAssemblerKey.Namespace}
 	app := &sigappv1beta1.Application{}
 	g.Expect(c.Get(context.TODO(), appKey, app)).NotTo(HaveOccurred())
@@ -259,12 +258,6 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 		payload.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
-
-	pruleKey := types.NamespacedName{Name: deployableKey.Namespace + "-configmap-" + payload.Namespace + "-" +
-		payload.Name, Namespace: applicationAssemblerKey.Namespace}
-	prule = &prulev1alpha1.PlacementRule{}
-	time.Sleep(100 * time.Millisecond)
-	g.Expect(c.Get(context.TODO(), pruleKey, prule)).NotTo(HaveOccurred())
 }
 
 func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployableCreated(t *testing.T) {
