@@ -1,5 +1,4 @@
 reviewers:
-- dlong-1
 - colton-nicotera
 - sophiaxu0424
 - tperamun
@@ -7,3 +6,4 @@ reviewers:
 approvers:
 - rbmateescu
 - kuanf
+- dlong-1
