@@ -49,7 +49,7 @@ var (
 			Name: resource + "." + group,
 		},
 		Spec: crds.CustomResourceDefinitionSpec{
-			Group:   group,
+			Group: group,
 			Names: crds.CustomResourceDefinitionNames{
 				Singular: "testresource",
 				Plural:   resource,
@@ -58,8 +58,8 @@ var (
 			Scope: "Namespaced",
 			Versions: []crds.CustomResourceDefinitionVersion{
 				{
-					Name: version,
-					Served: true,
+					Name:    version,
+					Served:  true,
 					Storage: true,
 					Schema: &crds.CustomResourceValidation{
 						OpenAPIV3Schema: &crds.JSONSchemaProps{

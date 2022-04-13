@@ -108,8 +108,8 @@ func (r *ReconcileCustomResourceDefinition) Reconcile(request reconcile.Request)
 			if _, ok := utils.GVKGVRMap[gvk]; ok {
 				return reconcile.Result{}, nil
 			}
-	
-		}		
+
+		}
 	}
 	utils.RebuildGVKGVRMap(r.config)
 	return reconcile.Result{}, nil
