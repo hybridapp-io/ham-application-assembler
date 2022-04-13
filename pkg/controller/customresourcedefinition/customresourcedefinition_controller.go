@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
-	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -98,16 +98,18 @@ func (r *ReconcileCustomResourceDefinition) Reconcile(request reconcile.Request)
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	gvk := schema.GroupVersionKind{
-		Group:   instance.Spec.Group,
-		Version: instance.Spec.Version,
-		Kind:    instance.Spec.Names.Kind,
-	}
-	if utils.GVKGVRMap != nil {
-		if _, ok := utils.GVKGVRMap[gvk]; ok {
-			return reconcile.Result{}, nil
+	for _, version := range instance.Spec.Versions {
+		gvk := schema.GroupVersionKind{
+			Group:   instance.Spec.Group,
+			Version: version.Name,
+			Kind:    instance.Spec.Names.Kind,
 		}
-
+		if utils.GVKGVRMap != nil {
+			if _, ok := utils.GVKGVRMap[gvk]; ok {
+				return reconcile.Result{}, nil
+			}
+	
+		}		
 	}
 	utils.RebuildGVKGVRMap(r.config)
 	return reconcile.Result{}, nil

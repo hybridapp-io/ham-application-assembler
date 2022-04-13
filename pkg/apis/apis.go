@@ -16,7 +16,7 @@ package apis
 
 import (
 	sigappapis "github.com/kubernetes-sigs/application/pkg/apis"
-	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	dplapis "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis"

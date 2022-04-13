@@ -21,7 +21,7 @@ import (
 
 	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 	. "github.com/onsi/gomega"
-	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,11 +50,23 @@ var (
 		},
 		Spec: crds.CustomResourceDefinitionSpec{
 			Group:   group,
-			Version: version,
 			Names: crds.CustomResourceDefinitionNames{
 				Singular: "testresource",
 				Plural:   resource,
 				Kind:     kind,
+			},
+			Scope: "Namespaced",
+			Versions: []crds.CustomResourceDefinitionVersion{
+				{
+					Name: version,
+					Served: true,
+					Storage: true,
+					Schema: &crds.CustomResourceValidation{
+						OpenAPIV3Schema: &crds.JSONSchemaProps{
+							Type: "object",
+						},
+					},
+				},
 			},
 		},
 	}
