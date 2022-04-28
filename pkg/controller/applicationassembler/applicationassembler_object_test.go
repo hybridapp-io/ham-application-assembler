@@ -210,6 +210,7 @@ func TestHubComponents(t *testing.T) {
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
