@@ -159,6 +159,7 @@ func TestReconcile(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
@@ -239,12 +240,14 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -328,12 +331,14 @@ func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployable
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -516,12 +521,14 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
