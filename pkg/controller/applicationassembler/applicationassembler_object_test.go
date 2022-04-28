@@ -265,6 +265,7 @@ func TestHubComponentsAnnotations(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl: := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
