@@ -22,7 +22,6 @@ import (
 
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,8 +53,8 @@ var (
 			Name:      serviceName,
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
 				{
 					Port: 3306,
 				},
@@ -76,7 +75,7 @@ var (
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{appLabelSelector: applicationName},
 			},
-			Template: v1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{appLabelSelector: applicationName},
 				},
