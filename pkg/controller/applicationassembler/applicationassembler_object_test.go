@@ -22,7 +22,6 @@ import (
 
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,8 +53,8 @@ var (
 			Name:      serviceName,
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
 				{
 					Port: 3306,
 				},
@@ -76,7 +75,7 @@ var (
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{appLabelSelector: applicationName},
 			},
-			Template: v1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{appLabelSelector: applicationName},
 				},
@@ -205,12 +204,14 @@ func TestHubComponents(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -264,12 +265,14 @@ func TestHubComponentsAnnotations(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -288,12 +291,14 @@ func TestHubComponentsAnnotations(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -380,12 +385,14 @@ func TestHubComponentsPlacementBySingleDeployer(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -492,12 +499,14 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -608,12 +617,14 @@ func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
@@ -679,12 +690,14 @@ func TestComponentsNameLength(t *testing.T) {
 		dplList := &hdplv1alpha1.DeployableList{}
 		g.Expect(c.List(context.TODO(), dplList)).NotTo(HaveOccurred())
 		for _, hdpl := range dplList.Items {
+			hdpl := hdpl
 			g.Expect(c.Delete(context.TODO(), &hdpl)).NotTo(HaveOccurred())
 		}
 		// cleanup hpr
 		hprList := &prulev1alpha1.PlacementRuleList{}
 		g.Expect(c.List(context.TODO(), hprList)).NotTo(HaveOccurred())
 		for _, hpr := range hprList.Items {
+			hpr := hpr
 			g.Expect(c.Delete(context.TODO(), &hpr)).NotTo(HaveOccurred())
 		}
 		// cleanup the appasm
