@@ -34,39 +34,41 @@ import (
 	//dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 )
 
-// Locates a deployable wrapping an application in a managed cluster namespace
-func (r *ReconcileApplication) locateAppDeployable(appKey types.NamespacedName, namespace string) (*workapiv1.ManifestWork, error) {
+// Locates a manifestwork wrapping an application in a managed cluster namespace
+func (r *ReconcileApplication) locateAppDeployable(appKey types.NamespacedName, namespace string) (*workapiv1.ManifestWork, int, error) {
 	//dpllist := &dplv1.DeployableList{}
 
 	mworklist := &workapiv1.ManifestWorkList{}
 	err := r.List(context.TODO(), mworklist, client.InNamespace(namespace))
 	if err != nil {
 		klog.Error("Failed to retrieve the list of deployables with error:", err)
-		return nil, err
+		return nil, 0, err
 	}
 
 	for _, mwork := range mworklist.Items {
 		// source annotation is not powerful enough, we need to get deployables with a specific template type
-		templateobj := &unstructured.Unstructured{}
-		err = json.Unmarshal(mwork.Spec.Workload.Manifests, templateobj) //ToDo
-		if err != nil {
-			klog.Info("Failed to unmarshal object with error", err)
-			return nil, err
-		}
+		for i, manifest := range mwork.Spec.Workload.Manifests {
+			templateobj := &unstructured.Unstructured{}
+			err = json.Unmarshal(manifest.Raw, templateobj)
+			if err != nil {
+				klog.Info("Failed to unmarshal object with error", err)
+				return nil, 0, err
+			}
 
-		if templateobj.GetKind() != applicationGVK.Kind {
-			continue
-		}
+			if templateobj.GetKind() != applicationGVK.Kind {
+				continue
+			}
 
-		annotations := mwork.GetAnnotations()
-		if srcobj, ok := annotations[hdplv1alpha1.SourceObject]; ok {
-			if srcobj == appKey.String() {
-				return mwork.DeepCopy(), nil
+			annotations := mwork.GetAnnotations()
+			if srcobj, ok := annotations[hdplv1alpha1.SourceObject]; ok {
+				if srcobj == appKey.String() {
+					return mwork.DeepCopy(), i, nil
+				}
 			}
 		}
 	}
 
-	return nil, nil
+	return nil, 0, nil
 }
 
 // This function will reconcile the app deployable in all managed namespaces .
@@ -157,7 +159,7 @@ func (r *ReconcileApplication) deleteApplicationDeployables(appKey types.Namespa
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		manifestWork, err := r.locateAppDeployable(appKey, cluster.Name)
+		manifestWork, _, err := r.locateAppDeployable(appKey, cluster.Name)
 		if err != nil {
 			klog.Error("Failed to locate application deployable with error: ", err)
 			return err
@@ -179,14 +181,14 @@ func (r *ReconcileApplication) reconcileAppDeployable(app *sigappv1beta1.Applica
 		Name:      app.Name,
 		Namespace: app.Namespace,
 	}
-	manifestWork, err := r.locateAppDeployable(appKey, namespace)
+	manifestWork, manifestNum, err := r.locateAppDeployable(appKey, namespace)
 	if err != nil {
 		klog.Error("Failed to locate application deployable with error: ", err)
 		return err
 	}
 	if manifestWork == nil {
 		manifestwork := &workapiv1.ManifestWork{}
-		manifestwork.generateName = r.generateName(app.GetName())
+		manifestwork.GenerateName = r.generateName(app.GetName())
 		manifestwork.Namespace = namespace
 	}
 
@@ -194,8 +196,18 @@ func (r *ReconcileApplication) reconcileAppDeployable(app *sigappv1beta1.Applica
 	r.prepareDeployable(manifestWork, tplApp)
 	r.prepareTemplate(tplApp, app.Namespace)
 
-	manifestWork.Spec.Template = &runtime.RawExtension{ // ToDo
-		Object: tplApp,
+	appManifest := workapiv1.Manifest{
+		runtime.RawExtension{
+			Object: tplApp,
+		},
+	}
+
+	if len(manifestWork.Spec.Workload.Manifests) == 0 {
+		manifestWork.Spec.Workload.Manifests = []workapiv1.Manifest{
+			appManifest,
+		}
+	} else {
+		manifestWork.Spec.Workload.Manifests[manifestNum] = appManifest
 	}
 
 	if manifestWork.UID == "" {
