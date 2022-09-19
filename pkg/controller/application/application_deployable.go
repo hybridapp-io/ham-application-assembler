@@ -187,9 +187,10 @@ func (r *ReconcileApplication) reconcileAppDeployable(app *sigappv1beta1.Applica
 		return err
 	}
 	if manifestWork == nil {
-		manifestwork := &workapiv1.ManifestWork{}
-		manifestwork.GenerateName = r.generateName(app.GetName())
-		manifestwork.Namespace = namespace
+		manifestWork = &workapiv1.ManifestWork{}
+
+		manifestWork.GenerateName = r.generateName(app.GetName())
+		manifestWork.Namespace = namespace
 	}
 
 	tplApp := app.DeepCopy()
