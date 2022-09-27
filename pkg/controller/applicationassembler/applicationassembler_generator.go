@@ -91,7 +91,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployables(instance *tool
 	for _, managedCluster := range instance.Spec.ManagedClustersComponents {
 		clusterName := managedCluster.Cluster
 		for _, obj := range managedCluster.Components {
-			if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.DeployableGVK {
+			if obj.GetObjectKind().GroupVersionKind().Empty() || obj.GetObjectKind().GroupVersionKind() == toolsv1alpha1.ManifestworkGVK {
 				if err = r.generateHybridDeployableFromDeployable(instance, obj, appID, clusterName); err != nil {
 					klog.Error("Failed to generate hybrid deployable from deployable for ", obj.Namespace+"/"+obj.Name)
 					return err

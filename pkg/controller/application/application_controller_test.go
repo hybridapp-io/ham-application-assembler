@@ -509,15 +509,15 @@ func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T)
 	components := []*corev1.ObjectReference{
 		{
 			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
 			Name:       dpl1.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 		{
 			Namespace:  dpl2.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
 			Name:       dpl2.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 	}
 	for _, comp := range appasm.Spec.ManagedClustersComponents {
@@ -616,15 +616,15 @@ func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
 	components := []*corev1.ObjectReference{
 		{
 			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
 			Name:       dpl1.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 		{
 			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
 			Name:       dpl2.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 	}
 	for _, comp := range appasm.Spec.ManagedClustersComponents[0].Components {
@@ -728,9 +728,9 @@ func Test_ApplicationAssemblerComponents_ClusterScoped_False(t *testing.T) {
 	components := []*corev1.ObjectReference{
 		{
 			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
 			Name:       dpl1.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 	}
 	for _, comp := range appasm.Spec.ManagedClustersComponents[0].Components {
