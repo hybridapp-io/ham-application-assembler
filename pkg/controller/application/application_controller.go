@@ -169,6 +169,7 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 	if r.isCreateAssemblerEnabled(app) {
 		appasm := &toolsv1alpha1.ApplicationAssembler{}
 		err := r.Get(context.TODO(), appKey, appasm)
+		r.Get(context.TODO(), appKey, app)
 
 		if err != nil {
 			if errors.IsNotFound(err) {

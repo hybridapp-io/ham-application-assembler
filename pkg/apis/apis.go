@@ -23,6 +23,7 @@ import (
 
 	hdplapis "github.com/hybridapp-io/ham-deployable-operator/pkg/apis"
 	hprlapis "github.com/hybridapp-io/ham-placement/pkg/apis"
+	manifestwork "github.com/open-cluster-management/api/work/v1"
 )
 
 // AddToSchemes may be used to add all resources defined in the project to a Scheme
@@ -53,6 +54,11 @@ func AddToScheme(s *runtime.Scheme) error {
 	}
 
 	err = hprlapis.AddToScheme(s)
+	if err != nil {
+		return err
+	}
+
+	err = manifestwork.AddToScheme(s)
 	if err != nil {
 		return err
 	}
