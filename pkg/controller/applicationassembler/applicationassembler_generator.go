@@ -184,8 +184,6 @@ func (r *ReconcileApplicationAssembler) updateApplication(instance *toolsv1alpha
 	app.Status = sigappv1beta1.ApplicationStatus{}
 	// existing app
 	if app.UID != "" {
-		appkey := types.NamespacedName{Name: app.Name, Namespace: app.Namespace}
-		r.Get(context.TODO(), appkey, app)
 		err = r.Update(context.TODO(), app)
 		_ = r.Status().Update(context.TODO(), app)
 

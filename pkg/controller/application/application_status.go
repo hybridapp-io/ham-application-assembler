@@ -109,8 +109,6 @@ func (r *ReconcileApplication) generateName(name string) string {
 }
 
 func (r *ReconcileApplication) updateDiscoveryAnnotations(app *sigappv1beta1.Application) error {
-	appkey := types.NamespacedName{Name: app.Name, Namespace: app.Namespace}
-	r.Get(context.TODO(), appkey, app)
 
 	if _, ok := app.GetAnnotations()[hdplv1alpha1.AnnotationHybridDiscovery]; ok {
 		app.Annotations[hdplv1alpha1.AnnotationHybridDiscovery] = hdplv1alpha1.HybridDiscoveryCompleted
