@@ -32,7 +32,7 @@ import (
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 )
 
-func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(instance *toolsv1alpha1.ApplicationAssembler,
+func (r *ReconcileApplicationAssembler) generateHybridDeployableFromManifestWork(instance *toolsv1alpha1.ApplicationAssembler,
 	obj *corev1.ObjectReference, appID string, clusterName string) error {
 	var err error
 
