@@ -22,7 +22,8 @@ import (
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	// dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	workapiv1 "github.com/open-cluster-management/api/work/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -65,6 +66,17 @@ var (
 		Version: "v1alpha1",
 		Kind:    "VirtualMachine",
 	}
+)
+
+var (
+	// SchemeGroupVersion is group version used to register these objects
+	SchemeGroupVersion = schema.GroupVersion{Group: "apps.open-cluster-management.io", Version: "v1"}
+
+	// PropertyHostingManifestwork tells NamespacedName of the hosting manifestwork of the dependency
+	PropertyHostingManifestwork = "hosting-manifestwork"
+
+	// AnnotationHosting sits in templated resource, gives name of hosting manifestwork
+	AnnotationHosting = SchemeGroupVersion.Group + "/" + PropertyHostingManifestwork
 )
 
 type Relationship struct {
@@ -154,7 +166,7 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 				// ignore the resource if it belongs to another hub, this helps the all-in-one poc scenario
 				ra := resource.GetAnnotations()
 				if ra != nil {
-					if _, ok := ra[dplv1.AnnotationHosting]; ok {
+					if _, ok := ra[AnnotationHosting]; ok {
 						continue
 					}
 				}
@@ -163,37 +175,37 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 			}
 		}
 
-		// remote components wrapped by deployables if discovery annotation is enabled
+		// remote components wrapped by manifestwork if discovery annotation is enabled
 		if r.isAppDiscoveryEnabled(app) {
-			dplList := &dplv1.DeployableList{}
+			mwList := &workapiv1.ManifestWorkList{}
 
 			// if selector is not provided, no components will be fetched
 			if app.Spec.Selector != nil {
 				if app.Spec.Selector.MatchLabels != nil {
-					err = r.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).AsSelector()})
+					err = r.List(context.TODO(), mwList, &client.ListOptions{LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).AsSelector()})
 					if err != nil {
-						klog.Error("Failed to retrieve the list of deployables for GK ", gk)
+						klog.Error("Failed to retrieve the list of manifestworks for GK ", gk)
 						return nil, err
 					}
 				}
 			}
-			for i := range dplList.Items {
-				dpl := dplList.Items[i]
-				dplTemplate := &unstructured.Unstructured{}
-				err = json.Unmarshal(dpl.Spec.Template.Raw, dplTemplate)
+			for i := range mwList.Items {
+				mw := mwList.Items[i]
+				manifest := &unstructured.Unstructured{}
+				err = json.Unmarshal(mw.Spec.Workload.Manifests[0].Raw, manifest)
 				if err != nil {
 					klog.Info("Failed to unmarshal object with error", err)
 					return nil, err
 				}
 				// if not clusterscoped, then only accept resources in same
 				// namespace as app
-				if !r.isDiscoveryClusterScoped(app) && dplTemplate.GetNamespace() != app.Namespace {
+				if !r.isDiscoveryClusterScoped(app) && manifest.GetNamespace() != app.Namespace {
 					continue
 				}
-				if (mapping != nil && dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping)) ||
-					(mapping == nil && dplTemplate.GetKind() == gk.Kind && utils.StripVersion(dplTemplate.GetAPIVersion()) == gk.Group) {
+				if (mapping != nil && manifest.GetKind() == gk.Kind && manifest.GetAPIVersion() == utils.GetAPIVersion(mapping)) ||
+					(mapping == nil && manifest.GetKind() == gk.Kind && utils.StripVersion(manifest.GetAPIVersion()) == gk.Group) {
 
-					ucMap, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&dpl)
+					ucMap, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&mw)
 					ucObj := &unstructured.Unstructured{}
 					ucObj.SetUnstructuredContent(ucMap)
 					resources = append(resources, ucObj)
@@ -403,7 +415,7 @@ func (r *ReconcileApplication) buildRelationshipsConfigmap(app *sigappv1beta1.Ap
 
 // addHdplRelationships adds resources that are related to a Hybrid Deployable
 // to the relationships configmap for the Hybrid App. Resources searched for
-// include Hybrid PlacementRule, Deployable, and VirtualMachine
+// include Hybrid PlacementRule, Manifestwork, and VirtualMachine
 func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployable, relationships []Relationship) ([]Relationship, error) {
 	// Get related Hybrid PlacementRules
 	hprRef := hdpl.Spec.Placement.PlacementRef
@@ -441,18 +453,18 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 
 	for _, decision := range hpr.Status.Decisions {
 		if decision.Kind == "ManagedCluster" {
-			// Get related Deployables
-			dplList := &dplv1.DeployableList{}
-			err = r.List(context.TODO(), dplList, &client.ListOptions{Namespace: decision.Name})
+			// Get related Manifestworks
+			mwList := &workapiv1.ManifestWorkList{}
+			err = r.List(context.TODO(), mwList, &client.ListOptions{Namespace: decision.Name})
 			if err != nil {
 				if errors.IsNotFound(err) {
 					continue
 				}
-				klog.Error("Error occurred while getting deployable list: ", err)
+				klog.Error("Error occurred while getting manifestwork list: ", err)
 				return relationships, err
 			}
-			for i, dpl := range dplList.Items {
-				if dpl.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
+			for i, mw := range mwList.Items {
+				if mw.Annotations[hdplv1alpha1.HostingHybridDeployable] == hdpl.Namespace+"/"+hdpl.Name {
 					relationships = append(relationships, Relationship{
 						Label:            "uses",
 						Source:           "k8s",
@@ -464,17 +476,17 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 						SourceName:       hdpl.GetName(),
 						Dest:             "k8s",
 						DestCluster:      "local-cluster",
-						DestNamespace:    dpl.GetNamespace(),
-						DestAPIGroup:     dpl.GroupVersionKind().Group,
-						DestAPIVersion:   dpl.GroupVersionKind().Version,
-						DestKind:         dpl.GroupVersionKind().Kind,
-						DestName:         dpl.GetName(),
+						DestNamespace:    mw.GetNamespace(),
+						DestAPIGroup:     mw.GroupVersionKind().Group,
+						DestAPIVersion:   mw.GroupVersionKind().Version,
+						DestKind:         mw.GroupVersionKind().Kind,
+						DestName:         mw.GetName(),
 					})
 
-					// Get resources related to Deployable
-					relationships, err = r.addDeployableRelationships(&dplList.Items[i], relationships)
+					// Get resources related to Manifestwork
+					relationships, err = r.addManifestWorkRelationships(&mwList.Items[i], relationships)
 					if err != nil {
-						klog.Error("Error occurred while adding deployable relationships: ", err)
+						klog.Error("Error occurred while adding manifestwork relationships: ", err)
 						return relationships, err
 					}
 				}
@@ -515,32 +527,32 @@ func (r *ReconcileApplication) addHdplRelationships(hdpl *hdplv1alpha1.Deployabl
 	return relationships, nil
 }
 
-// addDeployableRelationships adds resources that are related to a Deployable
+// addManifestWorkRelationships adds resources that are related to a Manifestwork
 // to the relationships configmap for the Hybrid App
-func (r *ReconcileApplication) addDeployableRelationships(dpl *dplv1.Deployable, relationships []Relationship) ([]Relationship, error) {
+func (r *ReconcileApplication) addManifestWorkRelationships(mw *workapiv1.ManifestWork, relationships []Relationship) ([]Relationship, error) {
 	// Parse byte array in Template.Raw to struct
-	tmpl := unstructured.Unstructured{}
-	err := json.Unmarshal(dpl.Spec.Template.Raw, &tmpl)
+	manifest := unstructured.Unstructured{}
+	err := json.Unmarshal(mw.Spec.Workload.Manifests[0].Raw, &manifest)
 	if err != nil {
-		klog.Error("Failed to unmarshal object:\n", string(dpl.Spec.Template.Raw), " with error ", err)
+		klog.Error("Failed to unmarshal object:\n", string(mw.Spec.Workload.Manifests[0].Raw), " with error ", err)
 		return relationships, err
 	}
 	relationships = append(relationships, Relationship{
 		Label:            "uses",
 		Source:           "k8s",
 		SourceCluster:    "local-cluster",
-		SourceNamespace:  dpl.GetNamespace(),
-		SourceAPIGroup:   dpl.GroupVersionKind().Group,
-		SourceAPIVersion: dpl.GroupVersionKind().Version,
-		SourceKind:       dpl.GroupVersionKind().Kind,
-		SourceName:       dpl.GetName(),
+		SourceNamespace:  mw.GetNamespace(),
+		SourceAPIGroup:   mw.GroupVersionKind().Group,
+		SourceAPIVersion: mw.GroupVersionKind().Version,
+		SourceKind:       mw.GroupVersionKind().Kind,
+		SourceName:       mw.GetName(),
 		Dest:             "k8s",
-		DestCluster:      dpl.GetNamespace(),
-		DestNamespace:    tmpl.GetNamespace(),
-		DestAPIGroup:     tmpl.GroupVersionKind().Group,
-		DestAPIVersion:   tmpl.GroupVersionKind().Version,
-		DestKind:         tmpl.GroupVersionKind().Kind,
-		DestName:         tmpl.GetName(),
+		DestCluster:      mw.GetNamespace(),
+		DestNamespace:    manifest.GetNamespace(),
+		DestAPIGroup:     manifest.GroupVersionKind().Group,
+		DestAPIVersion:   manifest.GroupVersionKind().Version,
+		DestKind:         manifest.GroupVersionKind().Kind,
+		DestName:         manifest.GetName(),
 	})
 
 	return relationships, nil
