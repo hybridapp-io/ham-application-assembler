@@ -43,7 +43,7 @@ var (
 	ManifestworkGVK = schema.GroupVersionKind{
 		Group:   manifestwork.SchemeGroupVersion.Group,
 		Version: manifestwork.SchemeGroupVersion.Version,
-		Kind:    "Manifestwork",
+		Kind:    "ManifestWork",
 	}
 
 	// ClustersIgnoredForDiscovery represents an array of clusters which will not be included in the discovery flow
