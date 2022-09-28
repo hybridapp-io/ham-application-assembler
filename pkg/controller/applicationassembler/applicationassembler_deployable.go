@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	workapiv1 "github.com/open-cluster-management/api/work/v1"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 
@@ -36,7 +36,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 	obj *corev1.ObjectReference, appID string, clusterName string) error {
 	var err error
 
-	dpl := &dplv1.Deployable{}
+	manifestwork := &workapiv1.ManifestWork{}
 	key := types.NamespacedName{
 		Namespace: obj.Namespace,
 		Name:      obj.Name,
@@ -46,16 +46,16 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		obj.Namespace = instance.Namespace
 	}
 
-	err = r.Get(context.TODO(), key, dpl)
+	err = r.Get(context.TODO(), key, manifestwork)
 	if err != nil {
-		klog.Error("Failed to obtain deployable object for application with error:", err)
+		klog.Error("Failed to obtain manifestwork object for application with error:", err)
 		return err
 	}
 
 	// generate the hdpl name based on the template object if possible to avoid clutter around discovered deployables with long names
-	if dpl.Spec.Template != nil {
+	if manifestwork.Spec.Workload.Manifests != nil {
 		templateobj := &unstructured.Unstructured{}
-		err = json.Unmarshal(dpl.Spec.Template.Raw, templateobj)
+		err = json.Unmarshal(manifestwork.Spec.Workload.Manifests[0].Raw, templateobj)
 		if err != nil {
 			klog.Info("Failed to unmarshal object with error", err)
 			return err
@@ -81,12 +81,12 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 		// create the hdpl and placement rule if it does not exist
 		hdpl.Name = key.Name
 		hdpl.Namespace = key.Namespace
-		err = r.patchObject(hdpl, dpl)
+		err = r.patchObject(hdpl, manifestwork)
 		if err != nil {
-			klog.Error("Failed to patch deployable : ", dpl.Namespace+"/"+dpl.Name, " with error: ", err)
+			klog.Error("Failed to patch manifestwork : ", manifestwork.Namespace+"/"+manifestwork.Name, " with error: ", err)
 			return err
 		}
-		return r.buildHybridDeployable(hdpl, dpl, appID, clusterName)
+		return r.buildHybridDeployable(hdpl, manifestwork, appID, clusterName)
 
 	}
 
@@ -94,20 +94,20 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromDeployable(i
 
 }
 
-func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1.Deployable, dpl *dplv1.Deployable,
+func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1.Deployable, manifestwork *workapiv1.ManifestWork,
 	appID string, clusterName string) error {
 
 	newtpl := &hdplv1alpha1.HybridTemplate{}
 	newtpl.DeployerType = hdplv1alpha1.DefaultDeployerType
 
-	annotations := dpl.GetAnnotations()
+	annotations := manifestwork.GetAnnotations()
 	if annotations != nil && annotations[hdplv1alpha1.DeployerType] != "" {
 		newtpl.DeployerType = annotations[hdplv1alpha1.DeployerType]
 	}
 
 	newtpl.Template = &runtime.RawExtension{}
 
-	newtpl.Template = r.trimDeployableTemplate(dpl.Spec.Template)
+	newtpl.Template = r.trimDeployableTemplate(&manifestwork.Spec.Workload.Manifests[0].RawExtension)
 
 	labels := hdpl.GetLabels()
 	if labels == nil {
