@@ -126,9 +126,9 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Recommended way is to use finalizers for dependency cleanup. It is not going to work for our resources though
-			// as a finalizer on the app will get propagated through its deployable onto the managed cluster , which will
-			// prevent the app cleanup when the deployable is removed
-			depErr := r.deleteApplicationDeployables(request.NamespacedName)
+			// as a finalizer on the app will get propagated through its  onto the managed cluster , which will
+			// prevent the app cleanup when the manifestwork is removed
+			depErr := r.deleteApplicationManifestWorks(request.NamespacedName)
 			if depErr != nil {
 				return reconcile.Result{}, depErr
 			}
@@ -148,7 +148,7 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 		Namespace: app.GetNamespace(),
 	}
 
-	// if discovery annotation is not enabled, return. Otherwise go through deployable reconciliation
+	// if discovery annotation is not enabled, return. Otherwise go through manifestwork reconciliation
 	if !r.isAppDiscoveryEnabled(app) {
 		// update application status based on the app selector and list of component kinds
 		err = r.updateApplicationStatus(app)
@@ -159,10 +159,10 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	// reconcile the application deployables which might trigger an app reconcile on all managed clusters
-	err = r.reconcileAppDeployables(app)
+	// reconcile the application manifestworks which might trigger an app reconcile on all managed clusters
+	err = r.reconcileAppManifestWorks(app)
 	if err != nil {
-		klog.Error("Failed to create deployable for application "+appKey.String()+" with error: ", err)
+		klog.Error("Failed to create manifestwork for application "+appKey.String()+" with error: ", err)
 		return reconcile.Result{}, err
 	}
 
@@ -186,9 +186,9 @@ func (r *ReconcileApplication) Reconcile(request reconcile.Request) (reconcile.R
 					return reconcile.Result{}, err
 				}
 
-				err = r.deleteApplicationDeployables(request.NamespacedName)
+				err = r.deleteApplicationManifestWorks(request.NamespacedName)
 				if err != nil {
-					klog.Error("Failed to delete deployables for application "+appKey.String()+" with error: ", err)
+					klog.Error("Failed to delete manifestworks for application "+appKey.String()+" with error: ", err)
 				}
 			}
 		}

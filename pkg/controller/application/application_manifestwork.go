@@ -31,22 +31,20 @@ import (
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 	workapiv1 "github.com/open-cluster-management/api/work/v1"
-	//dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 )
 
-// Locates a manifestwork wrapping an application in a managed cluster namespace
-func (r *ReconcileApplication) locateAppDeployable(appKey types.NamespacedName, namespace string) (*workapiv1.ManifestWork, int, error) {
-	//dpllist := &dplv1.DeployableList{}
+// Locates a man/Manifestwork wrapping an application in a managed cluster namespace
+func (r *ReconcileApplication) locateAppManifestWork(appKey types.NamespacedName, namespace string) (*workapiv1.ManifestWork, int, error) {
 
 	mworklist := &workapiv1.ManifestWorkList{}
 	err := r.List(context.TODO(), mworklist, client.InNamespace(namespace))
 	if err != nil {
-		klog.Error("Failed to retrieve the list of deployables with error:", err)
+		klog.Error("Failed to retrieve the list of manifestworks with error:", err)
 		return nil, 0, err
 	}
 
 	for _, mwork := range mworklist.Items {
-		// source annotation is not powerful enough, we need to get deployables with a specific template type
+		// source annotation is not powerful enough, we need to get manifestworks with a specific manifest type
 		for i, manifest := range mwork.Spec.Workload.Manifests {
 			templateobj := &unstructured.Unstructured{}
 			err = json.Unmarshal(manifest.Raw, templateobj)
@@ -71,18 +69,18 @@ func (r *ReconcileApplication) locateAppDeployable(appKey types.NamespacedName, 
 	return nil, 0, nil
 }
 
-// This function will reconcile the app deployable in all managed namespaces .
-// Each managed cluster namespace will have its own app deployable which will be in charge
+// This function will reconcile the app manifestwork in all managed namespaces .
+// Each managed cluster namespace will have its own app manifestwork which will be in charge
 // of discovering the app components in that respective managed cluster
-func (r *ReconcileApplication) reconcileAppDeployables(app *sigappv1beta1.Application) error {
+func (r *ReconcileApplication) reconcileAppManifestWorks(app *sigappv1beta1.Application) error {
 	if app.Annotations[toolsv1alpha1.AnnotationDiscoveryTarget] != "" {
-		return r.reconcileAppDeployableOnTarget(app)
+		return r.reconcileAppManifestWorkOnTarget(app)
 	}
 	// default discover across all managed clusters
-	return r.reconcileAppDeployableOnAllTargets(app)
+	return r.reconcileAppManifestWorkOnAllTargets(app)
 }
 
-func (r *ReconcileApplication) reconcileAppDeployableOnAllTargets(app *sigappv1beta1.Application) error {
+func (r *ReconcileApplication) reconcileAppManifestWorkOnAllTargets(app *sigappv1beta1.Application) error {
 
 	// retrieve a list of clusters
 	clusterList := &managedclusterv1.ManagedClusterList{}
@@ -101,9 +99,9 @@ func (r *ReconcileApplication) reconcileAppDeployableOnAllTargets(app *sigappv1b
 		}
 		// process only clusters which are not in the ignored list
 		if !ignored {
-			err = r.reconcileAppDeployable(app, cluster.Name)
+			err = r.reconcileAppManifestWork(app, cluster.Name)
 			if err != nil {
-				klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Name)
+				klog.Error("Failed to reconcile the application manifestwork in managed cluster namespace: ", cluster.Name)
 				return err
 			}
 		}
@@ -112,7 +110,7 @@ func (r *ReconcileApplication) reconcileAppDeployableOnAllTargets(app *sigappv1b
 	return nil
 }
 
-func (r *ReconcileApplication) reconcileAppDeployableOnTarget(app *sigappv1beta1.Application) error {
+func (r *ReconcileApplication) reconcileAppManifestWorkOnTarget(app *sigappv1beta1.Application) error {
 
 	targetJSON := app.Annotations[toolsv1alpha1.AnnotationDiscoveryTarget]
 	targetObjectReference := &corev1.ObjectReference{}
@@ -138,9 +136,9 @@ func (r *ReconcileApplication) reconcileAppDeployableOnTarget(app *sigappv1beta1
 	}
 	// process only clusters which are not in the ignored list
 	if !ignored {
-		err := r.reconcileAppDeployable(app, cluster.Name)
+		err := r.reconcileAppManifestWork(app, cluster.Name)
 		if err != nil {
-			klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Name)
+			klog.Error("Failed to reconcile the application manifestwork in managed cluster namespace: ", cluster.Name)
 			return err
 		}
 	}
@@ -148,7 +146,7 @@ func (r *ReconcileApplication) reconcileAppDeployableOnTarget(app *sigappv1beta1
 	return nil
 }
 
-func (r *ReconcileApplication) deleteApplicationDeployables(appKey types.NamespacedName) error {
+func (r *ReconcileApplication) deleteApplicationManifestWorks(appKey types.NamespacedName) error {
 
 	// retrieve a list of clusters
 	clusterList := &managedclusterv1.ManagedClusterList{}
@@ -159,16 +157,16 @@ func (r *ReconcileApplication) deleteApplicationDeployables(appKey types.Namespa
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		manifestWork, _, err := r.locateAppDeployable(appKey, cluster.Name)
+		manifestWork, _, err := r.locateAppManifestWork(appKey, cluster.Name)
 		if err != nil {
-			klog.Error("Failed to locate application deployable with error: ", err)
+			klog.Error("Failed to locate application manifestwork with error: ", err)
 			return err
 		}
 
 		if manifestWork != nil {
 			err = r.Delete(context.TODO(), manifestWork)
 			if err != nil {
-				klog.Error("Failed to delete application deployable ", manifestWork.Namespace+"/"+manifestWork.Name+" with error:", err)
+				klog.Error("Failed to delete application manifestwork ", manifestWork.Namespace+"/"+manifestWork.Name+" with error:", err)
 			}
 		}
 	}
@@ -176,14 +174,14 @@ func (r *ReconcileApplication) deleteApplicationDeployables(appKey types.Namespa
 	return nil
 }
 
-func (r *ReconcileApplication) reconcileAppDeployable(app *sigappv1beta1.Application, namespace string) error {
+func (r *ReconcileApplication) reconcileAppManifestWork(app *sigappv1beta1.Application, namespace string) error {
 	appKey := types.NamespacedName{
 		Name:      app.Name,
 		Namespace: app.Namespace,
 	}
-	manifestWork, manifestNum, err := r.locateAppDeployable(appKey, namespace)
+	manifestWork, manifestNum, err := r.locateAppManifestWork(appKey, namespace)
 	if err != nil {
-		klog.Error("Failed to locate application deployable with error: ", err)
+		klog.Error("Failed to locate application manifestwork with error: ", err)
 		return err
 	}
 	if manifestWork == nil {
@@ -194,7 +192,7 @@ func (r *ReconcileApplication) reconcileAppDeployable(app *sigappv1beta1.Applica
 	}
 
 	tplApp := app.DeepCopy()
-	r.prepareDeployable(manifestWork, tplApp)
+	r.prepareManifestWork(manifestWork, tplApp)
 	r.prepareTemplate(tplApp, app.Namespace)
 
 	appManifest := workapiv1.Manifest{
@@ -218,14 +216,14 @@ func (r *ReconcileApplication) reconcileAppDeployable(app *sigappv1beta1.Applica
 	}
 
 	if err != nil {
-		klog.Error("Failed to reconcile app deployable with error: ", err)
+		klog.Error("Failed to reconcile app manifestwork with error: ", err)
 		return err
 	}
 
 	return nil
 }
 
-func (r *ReconcileApplication) prepareDeployable(manifestWork *workapiv1.ManifestWork, app *sigappv1beta1.Application) {
+func (r *ReconcileApplication) prepareManifestWork(manifestWork *workapiv1.ManifestWork, app *sigappv1beta1.Application) {
 	labels := manifestWork.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
