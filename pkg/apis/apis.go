@@ -19,8 +19,6 @@ import (
 	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	dplapis "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis"
-
 	hdplapis "github.com/hybridapp-io/ham-deployable-operator/pkg/apis"
 	hprlapis "github.com/hybridapp-io/ham-placement/pkg/apis"
 	manifestwork "github.com/open-cluster-management/api/work/v1"
@@ -39,11 +37,6 @@ func AddToScheme(s *runtime.Scheme) error {
 	}
 
 	err = hdplapis.AddToScheme(s)
-	if err != nil {
-		return err
-	}
-
-	err = dplapis.AddToScheme(s)
 	if err != nil {
 		return err
 	}
