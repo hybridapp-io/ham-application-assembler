@@ -35,7 +35,7 @@ import (
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	workapiv1 "github.com/open-cluster-management/api/work/v1"
 )
 
 var (
@@ -69,14 +69,20 @@ var (
 		Namespace: mcName,
 	}
 
-	deployable = &dplv1.Deployable{
+	manifestwork = &workapiv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deployableKey.Name,
 			Namespace: deployableKey.Namespace,
 		},
-		Spec: dplv1.DeployableSpec{
-			Template: &runtime.RawExtension{
-				Object: payload,
+		Spec: workapiv1.ManifestWorkSpec{
+			Workload: workapiv1.ManifestsTemplate{
+				Manifests: []workapiv1.Manifest{
+					{
+						runtime.RawExtension{
+							Object: payload,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -94,13 +100,13 @@ var (
 		Spec: toolsv1alpha1.ApplicationAssemblerSpec{
 			ManagedClustersComponents: []*toolsv1alpha1.ClusterComponent{
 				{
-					Cluster: deployable.Namespace,
+					Cluster: manifestwork.Namespace,
 					Components: []*corev1.ObjectReference{
 						{
 							APIVersion: "apps.open-cluster-management.io/v1",
-							Kind:       "Deployable",
-							Name:       deployable.Name,
-							Namespace:  deployable.Namespace,
+							Kind:       "ManifestWork",
+							Name:       manifestwork.Name,
+							Namespace:  manifestwork.Namespace,
 						},
 					},
 				},
@@ -141,11 +147,11 @@ func TestReconcile(t *testing.T) {
 	cluster := mc.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cluster)).To(Succeed())
 
-	// create the deployable object
-	dpl := deployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl)).NotTo(HaveOccurred())
+	// create the manifestwork object
+	mwork := manifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl); err != nil {
+		if err = c.Delete(context.TODO(), mwork); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
@@ -223,10 +229,10 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 		}
 	}()
 
-	dplybl := deployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dplybl)).NotTo(HaveOccurred())
+	manwork := manifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), manwork)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.Background(), dplybl); err != nil {
+		if err = c.Delete(context.Background(), manwork); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
@@ -314,10 +320,10 @@ func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployable
 		}
 	}()
 
-	dplybl := deployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dplybl)).NotTo(HaveOccurred())
+	manwork := manifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), manwork)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.Background(), dplybl); err != nil {
+		if err = c.Delete(context.Background(), manwork); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
@@ -460,10 +466,10 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 		}
 	}()
 
-	dplybl := deployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dplybl)).NotTo(HaveOccurred())
+	manwork := manifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), manwork)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.Background(), dplybl); err != nil {
+		if err = c.Delete(context.Background(), manwork); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}

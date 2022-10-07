@@ -36,10 +36,10 @@ import (
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	workapiv1 "github.com/open-cluster-management/api/work/v1"
 )
 
-func TestCreateDeployables(t *testing.T) {
+func TestCreateManifestworks(t *testing.T) {
 	g := NewWithT(t)
 
 	var (
@@ -133,12 +133,12 @@ func TestCreateDeployables(t *testing.T) {
 	nameLabel := map[string]string{
 		hdplv1alpha1.HostingHybridDeployable: hybrddplyblKey.Name,
 	}
-	dplList := &dplv1.DeployableList{}
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(nameLabel))})).NotTo(HaveOccurred())
-	g.Expect(dplList.Items).To(HaveLen(0))
+	mworkList := &workapiv1.ManifestWorkList{}
+	g.Expect(c.List(context.TODO(), mworkList, &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(nameLabel))})).NotTo(HaveOccurred())
+	g.Expect(mworkList.Items).To(HaveLen(0))
 }
 
-func TestDeployableTemplates(t *testing.T) {
+func TestManifestworkTemplates(t *testing.T) {
 	g := NewWithT(t)
 
 	var (
@@ -153,7 +153,7 @@ func TestDeployableTemplates(t *testing.T) {
 				Namespace: "default",
 			},
 		}
-		mcServiceDeployable = &dplv1.Deployable{
+		mcServiceManifestwork = &workapiv1.ManifestWork{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      mcServiceName,
 				Namespace: mcName,
@@ -161,9 +161,15 @@ func TestDeployableTemplates(t *testing.T) {
 					hdplv1alpha1.AnnotationHybridDiscovery: "true",
 				},
 			},
-			Spec: dplv1.DeployableSpec{
-				Template: &runtime.RawExtension{
-					Object: &mcService,
+			Spec: workapiv1.ManifestWorkSpec{
+				Workload: workapiv1.ManifestsTemplate{
+					Manifests: []workapiv1.Manifest{
+						{
+							runtime.RawExtension{
+								Object: &mcService,
+							},
+						},
+					},
 				},
 			},
 		}
@@ -184,10 +190,10 @@ func TestDeployableTemplates(t *testing.T) {
 						Cluster: mc.Name,
 						Components: []*corev1.ObjectReference{
 							{
-								APIVersion: mcServiceDeployable.APIVersion,
-								Kind:       mcServiceDeployable.Kind,
-								Name:       mcServiceDeployable.Name,
-								Namespace:  mcServiceDeployable.Namespace,
+								APIVersion: mcServiceManifestwork.APIVersion,
+								Kind:       mcServiceManifestwork.Kind,
+								Name:       mcServiceManifestwork.Name,
+								Namespace:  mcServiceManifestwork.Namespace,
 							},
 						},
 					},
@@ -241,10 +247,10 @@ func TestDeployableTemplates(t *testing.T) {
 		}
 	}()
 
-	dpl1 := mcServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	mwork1 := mcServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
