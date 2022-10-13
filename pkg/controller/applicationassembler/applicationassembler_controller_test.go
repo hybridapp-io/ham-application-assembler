@@ -103,7 +103,7 @@ var (
 					Cluster: manifestwork.Namespace,
 					Components: []*corev1.ObjectReference{
 						{
-							APIVersion: "apps.open-cluster-management.io/v1",
+							APIVersion: "work.open-cluster-management.io/v1",
 							Kind:       "ManifestWork",
 							Name:       manifestwork.Name,
 							Namespace:  manifestwork.Namespace,
