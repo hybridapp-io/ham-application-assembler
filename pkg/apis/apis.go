@@ -21,6 +21,7 @@ import (
 
 	hdplapis "github.com/hybridapp-io/ham-deployable-operator/pkg/apis"
 	hprlapis "github.com/hybridapp-io/ham-placement/pkg/apis"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	manifestwork "github.com/open-cluster-management/api/work/v1"
 )
 
@@ -52,6 +53,10 @@ func AddToScheme(s *runtime.Scheme) error {
 	}
 
 	err = manifestwork.AddToScheme(s)
+	if err != nil {
+		return err
+	}
+	err = managedclusterv1.AddToScheme(s)
 	if err != nil {
 		return err
 	}
