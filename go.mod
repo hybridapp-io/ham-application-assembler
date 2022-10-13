@@ -3,12 +3,11 @@ module github.com/hybridapp-io/ham-application-assembler
 go 1.17
 
 require (
-	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20210414204046-f5387dd09f68
+	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20221013200407-5313fd1b16c0
 	github.com/hybridapp-io/ham-placement v0.0.0-20210225195735-3057d58bb101
 	github.com/kubernetes-sigs/application v0.8.1
 	github.com/onsi/gomega v1.10.5
-	github.com/open-cluster-management/api v0.0.0-20200610161514-939cead3902c
-	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200721140654-267157672e39
+	github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1
 	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-12-21-17-19.0.20200721224621-79fd9d450d82
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/prometheus/common v0.10.0
@@ -62,6 +61,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/open-cluster-management/multicloud-operators-channel v1.0.1-0.20200604182604-841a36e63aa9 // indirect
+	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200603180154-d1d17d718c30 // indirect
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.0.1-2020-05-28-18-29-00.0.20200603172904-efde26079087 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.7.1 // indirect
@@ -71,7 +71,7 @@ require (
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd // indirect
+	golang.org/x/sys v0.0.0-20221006211917-84dc82d7e875 // indirect
 	golang.org/x/text v0.3.4 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	gomodules.xyz/jsonpatch/v2 v2.0.1 // indirect
@@ -93,3 +93,5 @@ replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v14.2.0+incompatible // Required by OLM
 	k8s.io/client-go => k8s.io/client-go v0.20.11
 )
+
+replace github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v0.18.0 // Bump dependency of multicloud-operators-subscription

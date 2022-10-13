@@ -19,10 +19,10 @@ import (
 	crds "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	dplapis "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis"
-
 	hdplapis "github.com/hybridapp-io/ham-deployable-operator/pkg/apis"
 	hprlapis "github.com/hybridapp-io/ham-placement/pkg/apis"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
+	manifestwork "github.com/open-cluster-management/api/work/v1"
 )
 
 // AddToSchemes may be used to add all resources defined in the project to a Scheme
@@ -42,17 +42,21 @@ func AddToScheme(s *runtime.Scheme) error {
 		return err
 	}
 
-	err = dplapis.AddToScheme(s)
-	if err != nil {
-		return err
-	}
-
 	err = crds.AddToScheme(s)
 	if err != nil {
 		return err
 	}
 
 	err = hprlapis.AddToScheme(s)
+	if err != nil {
+		return err
+	}
+
+	err = manifestwork.AddToScheme(s)
+	if err != nil {
+		return err
+	}
+	err = managedclusterv1.AddToScheme(s)
 	if err != nil {
 		return err
 	}

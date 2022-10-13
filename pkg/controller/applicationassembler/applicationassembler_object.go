@@ -19,7 +19,8 @@ import (
 	"strings"
 
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	// dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	workapiv1 "github.com/open-cluster-management/api/work/v1"
 	subv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
@@ -140,24 +141,35 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		hdpl.Name = r.genHybridDeployableName(instance, obj, clusterName)
 		hdpl.Namespace = hdplKey.Namespace
 
-		dpl := &dplv1.Deployable{}
-		dpl.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
-		dpl.Namespace = clusterName
+		mw := &workapiv1.ManifestWork{}
+		mw.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
+		mw.Namespace = clusterName
 		annotations := make(map[string]string)
 		annotations[hdplv1alpha1.AnnotationHybridDiscovery] = hdplv1alpha1.HybridDiscoveryEnabled
-		dpl.Annotations = annotations
+		mw.Annotations = annotations
 
 		tpl := &unstructured.Unstructured{}
 		tpl.SetAPIVersion(obj.APIVersion)
 		tpl.SetKind(obj.Kind)
 		tpl.SetName(obj.Name)
 		tpl.SetNamespace(obj.Namespace)
-		dpl.Spec.Template = &runtime.RawExtension{
-			Object: tpl,
-		}
-		hdpl.Annotations = dpl.Annotations
 
-		return r.buildHybridDeployable(hdpl, dpl, appID, clusterName)
+		manifest := workapiv1.Manifest{
+			runtime.RawExtension{
+				Object: tpl,
+			},
+		}
+		if len(mw.Spec.Workload.Manifests) == 0 {
+			mw.Spec.Workload.Manifests = []workapiv1.Manifest{
+				manifest,
+			}
+		} else {
+			mw.Spec.Workload.Manifests[0] = manifest
+		}
+
+		hdpl.Annotations = mw.Annotations
+
+		return r.buildHybridDeployable(hdpl, mw, appID, clusterName)
 	}
 
 	labels := hdpl.GetLabels()
@@ -252,9 +264,18 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 }
 
 var (
+	// SchemeGroupVersion is group version used to register these objects
+	SchemeGroupVersion = schema.GroupVersion{Group: "apps.open-cluster-management.io", Version: "v1"}
+
+	// PropertyHostingManifestwork tells NamespacedName of the hosting manifestwork of the dependency
+	PropertyHostingManifestwork = "hosting-manifestwork"
+
+	// AnnotationHosting sits in templated resource, gives name of hosting manifestwork
+	AnnotationHosting = SchemeGroupVersion.Group + "/" + PropertyHostingManifestwork
+
 	obsoleteAnnotations = []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
-		dplv1.AnnotationHosting,
+		AnnotationHosting,
 		subv1.AnnotationHosting,
 		subv1.AnnotationSyncSource,
 	}

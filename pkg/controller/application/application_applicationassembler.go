@@ -26,7 +26,7 @@ import (
 	"k8s.io/klog"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	manifestwork "github.com/open-cluster-management/api/work/v1"
 )
 
 func (r *ReconcileApplication) createApplicationAssembler(app *sigappv1beta1.Application) error {
@@ -38,7 +38,7 @@ func (r *ReconcileApplication) createApplicationAssembler(app *sigappv1beta1.App
 	appasm.Spec.HubComponents = make([]*corev1.ObjectReference, 0)
 	appasm.Spec.ManagedClustersComponents = make([]*toolsv1alpha1.ClusterComponent, 0)
 
-	// add the matching deployables
+	// add the matching manifestworks
 	resources, err := r.fetchApplicationComponents(app)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (r *ReconcileApplication) buildAssemblerComponents(appasm *toolsv1alpha1.Ap
 			Namespace:  resource.GetNamespace(),
 			APIVersion: resource.GetAPIVersion(),
 		}
-		if or.APIVersion == dplv1.SchemeGroupVersion.String() && or.Kind == toolsv1alpha1.DeployableGVK.Kind {
+		if or.APIVersion == manifestwork.SchemeGroupVersion.String() && or.Kind == toolsv1alpha1.ManifestworkGVK.Kind {
 			clusterName := resource.GetNamespace()
 			// retrieve the cluster
 			clusterKey := t.NamespacedName{

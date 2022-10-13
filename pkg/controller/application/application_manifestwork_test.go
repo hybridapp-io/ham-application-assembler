@@ -29,10 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	workapiv1 "github.com/open-cluster-management/api/work/v1"
 )
 
-func TestApplicationDeployable(t *testing.T) {
+func TestApplicationManifestwork(t *testing.T) {
 	g := NewWithT(t)
 
 	var c client.Client
@@ -77,21 +77,21 @@ func TestApplicationDeployable(t *testing.T) {
 		}
 	}()
 
-	// Create the Application object and expect the Reconcile and Deployable to be created
+	// Create the Application object and expect the Reconcile and Manifestwork to be created
 	app := application.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	dplList := &dplv1.DeployableList{}
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
-	g.Expect(dplList.Items).To(HaveLen(2))
+	mworklist := &workapiv1.ManifestWorkList{}
+	g.Expect(c.List(context.TODO(), mworklist, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
+	g.Expect(mworklist.Items).To(HaveLen(2))
 
-	for _, dpl := range dplList.Items {
-		g.Expect(dpl.Namespace).To(BeElementOf([]string{mc1Name, mc2Name}))
+	for _, mwork := range mworklist.Items {
+		g.Expect(mwork.Namespace).To(BeElementOf([]string{mc1Name, mc2Name}))
 	}
 
-	// app cleanup should also delete the app deployables
+	// app cleanup should also delete the app manifestworks
 
 	if err = c.Delete(context.TODO(), app); err != nil {
 		klog.Error(err)
@@ -101,12 +101,12 @@ func TestApplicationDeployable(t *testing.T) {
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	newList := &dplv1.DeployableList{}
+	newList := &workapiv1.ManifestWorkList{}
 	g.Expect(c.List(context.TODO(), newList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
 	g.Expect(newList.Items).To(HaveLen(0))
 }
 
-func TestApplicationDeployableIgnoredClusters(t *testing.T) {
+func TestApplicationManifestworkIgnoredClusters(t *testing.T) {
 	g := NewWithT(t)
 
 	var c client.Client
@@ -160,23 +160,23 @@ func TestApplicationDeployableIgnoredClusters(t *testing.T) {
 		}
 	}()
 
-	// Create the Application object and expect the Reconcile and Deployable to be created
+	// Create the Application object and expect the Reconcile and Manifestwork to be created
 	app := application.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	dplList := &dplv1.DeployableList{}
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{})).NotTo(HaveOccurred())
+	mworklist := &workapiv1.ManifestWorkList{}
+	g.Expect(c.List(context.TODO(), mworklist, &client.ListOptions{})).NotTo(HaveOccurred())
 
-	// ensure local-cluster is not generating any app deployable
-	g.Expect(dplList.Items).To(HaveLen(2))
+	// ensure local-cluster is not generating any app manifestwork
+	g.Expect(mworklist.Items).To(HaveLen(2))
 
-	for _, dpl := range dplList.Items {
-		g.Expect(dpl.Namespace).To(BeElementOf([]string{mc1Name, mc2Name}))
+	for _, mwork := range mworklist.Items {
+		g.Expect(mwork.Namespace).To(BeElementOf([]string{mc1Name, mc2Name}))
 	}
 
-	// app cleanup should also delete the app deployables
+	// app cleanup should also delete the app manifestworks
 
 	if err = c.Delete(context.TODO(), app); err != nil {
 		klog.Error(err)
@@ -186,12 +186,12 @@ func TestApplicationDeployableIgnoredClusters(t *testing.T) {
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	newList := &dplv1.DeployableList{}
+	newList := &workapiv1.ManifestWorkList{}
 	g.Expect(c.List(context.TODO(), newList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
 	g.Expect(newList.Items).To(HaveLen(0))
 }
 
-func TestApplicationDeployableTarget(t *testing.T) {
+func TestApplicationManifestworkTarget(t *testing.T) {
 	g := NewWithT(t)
 
 	var c client.Client
@@ -246,7 +246,7 @@ func TestApplicationDeployableTarget(t *testing.T) {
 		t.Fail()
 	}
 
-	// Create the Application object and expect the Reconcile and Deployable to be created
+	// Create the Application object and expect the Reconcile and Manifestwork to be created
 	app := application.DeepCopy()
 	app.Annotations[toolsv1alpha1.AnnotationDiscoveryTarget] = string(targetJSON)
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
@@ -259,10 +259,10 @@ func TestApplicationDeployableTarget(t *testing.T) {
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
-	dplList := &dplv1.DeployableList{}
-	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
-	g.Expect(dplList.Items).To(HaveLen(1))
+	mworklist := &workapiv1.ManifestWorkList{}
+	g.Expect(c.List(context.TODO(), mworklist, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
+	g.Expect(mworklist.Items).To(HaveLen(1))
 
-	g.Expect(dplList.Items[0].Namespace).To(Equal(cl1.Name))
+	g.Expect(mworklist.Items[0].Namespace).To(Equal(cl1.Name))
 
 }

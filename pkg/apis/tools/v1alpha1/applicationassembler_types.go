@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	manifestwork "github.com/open-cluster-management/api/work/v1"
 )
 
 var (
@@ -39,11 +39,11 @@ var (
 		Kind:  "Deployable",
 	}
 
-	//DeployableGVK represents the GroupVersionKind structure for a deployable
-	DeployableGVK = schema.GroupVersionKind{
-		Group:   dplv1.SchemeGroupVersion.Group,
-		Version: dplv1.SchemeGroupVersion.Version,
-		Kind:    "Deployable",
+	//ManifestworkGVK represents the GroupVersionKind structure for a deployable
+	ManifestworkGVK = schema.GroupVersionKind{
+		Group:   manifestwork.SchemeGroupVersion.Group,
+		Version: manifestwork.SchemeGroupVersion.Version,
+		Kind:    "ManifestWork",
 	}
 
 	// ClustersIgnoredForDiscovery represents an array of clusters which will not be included in the discovery flow

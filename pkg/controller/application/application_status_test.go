@@ -65,7 +65,7 @@ func TestDiscoveredComponentsInSameNamespace(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	// Stand up the infrastructure: managed cluster namespaces, manifestworks in mc namespaces
 
 	svc1 := mc1Service.DeepCopy()
 
@@ -89,7 +89,7 @@ func TestDiscoveredComponentsInSameNamespace(t *testing.T) {
 		}
 	}()
 
-	// Create the Application object and expect the deployables
+	// Create the Application object and expect the manifestworks
 
 	app := application.DeepCopy()
 
@@ -153,26 +153,26 @@ func TestDiscoveredComponentsWithLabelSelector(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	// Stand up the infrastructure: managed cluster namespaces, manifestworks in mc namespaces
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
+	mwork2 := mc2ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.Background(), mwork2)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.Background(), dpl2); err != nil {
+		if err = c.Delete(context.Background(), mwork2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	// Create the Application object and expect the deployables
+	// Create the Application object and expect the manifestworks
 	app := application.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 	defer func() {
@@ -190,16 +190,16 @@ func TestDiscoveredComponentsWithLabelSelector(t *testing.T) {
 	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(2))
 	components := []sigappv1beta1.ObjectStatus{
 		{
-			Group: toolsv1alpha1.DeployableGVK.Group,
-			Kind:  toolsv1alpha1.DeployableGVK.Kind,
-			Name:  dpl1.Name,
-			Link:  dpl1.SelfLink,
+			Group: toolsv1alpha1.ManifestworkGVK.Group,
+			Kind:  toolsv1alpha1.ManifestworkGVK.Kind,
+			Name:  mwork1.Name,
+			Link:  mwork1.SelfLink,
 		},
 		{
-			Group: toolsv1alpha1.DeployableGVK.Group,
-			Kind:  toolsv1alpha1.DeployableGVK.Kind,
-			Name:  dpl2.Name,
-			Link:  dpl2.SelfLink,
+			Group: toolsv1alpha1.ManifestworkGVK.Group,
+			Kind:  toolsv1alpha1.ManifestworkGVK.Kind,
+			Name:  mwork2.Name,
+			Link:  mwork2.SelfLink,
 		},
 	}
 	for _, comp := range app.Status.ComponentList.Objects {
@@ -233,26 +233,26 @@ func TestDiscoveredComponentsWithNoSelector(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	// Stand up the infrastructure: managed cluster namespaces, manifestworks in mc namespaces
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
+	mwork2 := mc2ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.Background(), mwork2)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.Background(), dpl2); err != nil {
+		if err = c.Delete(context.Background(), mwork2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	// Create the Application object and expect the deployables
+	// Create the Application object and expect the manifestworks
 	app := application.DeepCopy()
 	app.Spec.Selector = nil
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
@@ -296,26 +296,26 @@ func TestDiscoveredComponentsWithNoLabelSelector(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	// Stand up the infrastructure: managed cluster namespaces, manifestworks in mc namespaces
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
+	mwork2 := mc2ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.Background(), mwork2)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.Background(), dpl2); err != nil {
+		if err = c.Delete(context.Background(), mwork2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	// Create the Application object and expect the deployables
+	// Create the Application object and expect the manifestworkss
 	app := application.DeepCopy()
 	app.Spec.Selector.MatchLabels = nil
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
@@ -359,26 +359,26 @@ func TestDiscoveredComponentsWithEmptyLabelSelector(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	// Stand up the infrastructure: managed cluster namespaces, manifestworkss in mc namespaces
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
+	mwork2 := mc2ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.Background(), mwork2)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.Background(), dpl2); err != nil {
+		if err = c.Delete(context.Background(), mwork2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	// Create the Application object and expect the deployables
+	// Create the Application object and expect the manifestworkss
 	app := application.DeepCopy()
 	// empty label selector
 	app.Spec.Selector.MatchLabels = make(map[string]string)
@@ -425,7 +425,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	// Stand up the infrastructure: managed cluster namespaces, manifestworkss in mc namespaces
 	hdpl1 := mc1Hdpl.DeepCopy()
 	g.Expect(c.Create(context.TODO(), hdpl1)).NotTo(HaveOccurred())
 	defer func() {
@@ -453,10 +453,10 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	}
 	g.Expect(c.Status().Update(context.TODO(), hpr1)).NotTo(HaveOccurred())
 
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
@@ -509,7 +509,7 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	dynamicclient, err := dynamic.NewForConfig(mgr.GetConfig())
 	vmObj, err = dynamicclient.Resource(gvr).Namespace("default").Create(context.TODO(), vmObj, metav1.CreateOptions{})
 
-	// Create the Application object and expect the deployables
+	// Create the Application object and expect the manifestworkss
 	app := hybridApp.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
 
@@ -608,23 +608,23 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 			SourceName:       hdpl1.GetName(),
 			Dest:             "k8s",
 			DestCluster:      "local-cluster",
-			DestNamespace:    dpl1.GetNamespace(),
-			DestAPIGroup:     toolsv1alpha1.DeployableGVK.Group,
-			DestAPIVersion:   toolsv1alpha1.DeployableGVK.Version,
-			DestKind:         toolsv1alpha1.DeployableGVK.Kind,
-			DestName:         dpl1.GetName(),
+			DestNamespace:    mwork1.GetNamespace(),
+			DestAPIGroup:     toolsv1alpha1.ManifestworkGVK.Group,
+			DestAPIVersion:   toolsv1alpha1.ManifestworkGVK.Version,
+			DestKind:         toolsv1alpha1.ManifestworkGVK.Kind,
+			DestName:         mwork1.GetName(),
 		},
 		{
 			Label:            "uses",
 			Source:           "k8s",
 			SourceCluster:    "local-cluster",
-			SourceNamespace:  dpl1.GetNamespace(),
-			SourceAPIGroup:   toolsv1alpha1.DeployableGVK.Group,
-			SourceAPIVersion: toolsv1alpha1.DeployableGVK.Version,
-			SourceKind:       toolsv1alpha1.DeployableGVK.Kind,
-			SourceName:       dpl1.GetName(),
+			SourceNamespace:  mwork1.GetNamespace(),
+			SourceAPIGroup:   toolsv1alpha1.ManifestworkGVK.Group,
+			SourceAPIVersion: toolsv1alpha1.ManifestworkGVK.Version,
+			SourceKind:       toolsv1alpha1.ManifestworkGVK.Kind,
+			SourceName:       mwork1.GetName(),
 			Dest:             "k8s",
-			DestCluster:      dpl1.GetNamespace(),
+			DestCluster:      mwork1.GetNamespace(),
 			DestNamespace:    mc1Service.GetNamespace(),
 			DestAPIGroup:     mc1Service.GroupVersionKind().Group,
 			DestAPIVersion:   mc1Service.GroupVersionKind().Version,

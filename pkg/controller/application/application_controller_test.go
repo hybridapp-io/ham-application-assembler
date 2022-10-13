@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	workapiv1 "github.com/open-cluster-management/api/work/v1"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
@@ -107,7 +107,7 @@ var (
 		},
 	}
 
-	mc1ServiceDeployable = &dplv1.Deployable{
+	mc1ServiceManifestwork = &workapiv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mc1ServiceName,
 			Namespace: mc1Name,
@@ -119,9 +119,15 @@ var (
 				selectorName: appName,
 			},
 		},
-		Spec: dplv1.DeployableSpec{
-			Template: &runtime.RawExtension{
-				Object: &mc1Service,
+		Spec: workapiv1.ManifestWorkSpec{
+			Workload: workapiv1.ManifestsTemplate{
+				Manifests: []workapiv1.Manifest{
+					{
+						runtime.RawExtension{
+							Object: &mc1Service,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -150,7 +156,7 @@ var (
 			},
 		},
 	}
-	mc2ServiceDeployable = &dplv1.Deployable{
+	mc2ServiceManifestwork = &workapiv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mc2ServiceName,
 			Namespace: mc2Name,
@@ -161,9 +167,15 @@ var (
 				selectorName: appName,
 			},
 		},
-		Spec: dplv1.DeployableSpec{
-			Template: &runtime.RawExtension{
-				Object: &mc2Service,
+		Spec: workapiv1.ManifestWorkSpec{
+			Workload: workapiv1.ManifestsTemplate{
+				Manifests: []workapiv1.Manifest{
+					{
+						runtime.RawExtension{
+							Object: &mc2Service,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -442,7 +454,7 @@ func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T)
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	// Stand up the infrastructure: managed cluster namespaces, manifestworks in mc namespaces
 
 	cl1 := mc1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
@@ -462,25 +474,25 @@ func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T)
 		}
 	}()
 
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
+	mwork2 := mc2ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork2)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl2); err != nil {
+		if err = c.Delete(context.TODO(), mwork2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	// Create the Application object and expect the hybrid deployables in its status
+	// Create the Application object and expect the hybrid manifestworks in its status
 	app := application.DeepCopy()
 	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.HybridDiscoveryCreateAssembler
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
@@ -508,16 +520,16 @@ func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T)
 
 	components := []*corev1.ObjectReference{
 		{
-			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
-			Name:       dpl1.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			Namespace:  mwork1.Namespace,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
+			Name:       mwork1.Name,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 		{
-			Namespace:  dpl2.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
-			Name:       dpl2.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			Namespace:  mwork2.Namespace,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
+			Name:       mwork2.Name,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 	}
 	for _, comp := range appasm.Spec.ManagedClustersComponents {
@@ -555,7 +567,7 @@ func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	// Stand up the infrastructure: managed cluster namespaces, manifestworks in mc namespaces
 
 	cl1 := mc1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
@@ -566,26 +578,26 @@ func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
 		}
 	}()
 
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	dpl2.Namespace = mc1Name
-	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
+	mwork2 := mc2ServiceManifestwork.DeepCopy()
+	mwork2.Namespace = mc1Name
+	g.Expect(c.Create(context.TODO(), mwork2)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl2); err != nil {
+		if err = c.Delete(context.TODO(), mwork2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	// Create the Application object and expect the hybrid deployables in its status
+	// Create the Application object and expect the hybrid manifestworks in its status
 	app := application.DeepCopy()
 	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.HybridDiscoveryCreateAssembler
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
@@ -615,16 +627,16 @@ func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
 
 	components := []*corev1.ObjectReference{
 		{
-			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
-			Name:       dpl1.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			Namespace:  mwork1.Namespace,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
+			Name:       mwork1.Name,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 		{
-			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
-			Name:       dpl2.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			Namespace:  mwork1.Namespace,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
+			Name:       mwork2.Name,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 	}
 	for _, comp := range appasm.Spec.ManagedClustersComponents[0].Components {
@@ -658,7 +670,7 @@ func Test_ApplicationAssemblerComponents_ClusterScoped_False(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	// Stand up the infrastructure: managed cluster namespaces, manifestworks in mc namespaces
 
 	cl1 := mc1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
@@ -669,27 +681,27 @@ func Test_ApplicationAssemblerComponents_ClusterScoped_False(t *testing.T) {
 		}
 	}()
 
-	dpl1Service := mc1Service.DeepCopy()
-	dpl1Service.Namespace = "default"
+	mwork1Service := mc1Service.DeepCopy()
+	mwork1Service.Namespace = "default"
 
-	dpl1 := mc1ServiceDeployable.DeepCopy()
-	dpl1.Spec.Template.Object = dpl1Service
+	mwork1 := mc1ServiceManifestwork.DeepCopy()
+	mwork1.Spec.Workload.Manifests[0].RawExtension.Object = mwork1Service
 
-	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	g.Expect(c.Create(context.TODO(), mwork1)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl1); err != nil {
+		if err = c.Delete(context.TODO(), mwork1); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
 	}()
 
-	// this deployable should not be picked up by the assembler as it's
+	// this manifestworks should not be picked up by the assembler as it's
 	// resource is not in the same namespace as the app
-	dpl2 := mc2ServiceDeployable.DeepCopy()
-	dpl2.Namespace = mc1Name
-	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
+	mwork2 := mc2ServiceManifestwork.DeepCopy()
+	mwork2.Namespace = mc1Name
+	g.Expect(c.Create(context.TODO(), mwork2)).NotTo(HaveOccurred())
 	defer func() {
-		if err = c.Delete(context.TODO(), dpl2); err != nil {
+		if err = c.Delete(context.TODO(), mwork2); err != nil {
 			klog.Error(err)
 			t.Fail()
 		}
@@ -727,10 +739,10 @@ func Test_ApplicationAssemblerComponents_ClusterScoped_False(t *testing.T) {
 
 	components := []*corev1.ObjectReference{
 		{
-			Namespace:  dpl1.Namespace,
-			Kind:       toolsv1alpha1.DeployableGVK.Kind,
-			Name:       dpl1.Name,
-			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
+			Namespace:  mwork1.Namespace,
+			Kind:       toolsv1alpha1.ManifestworkGVK.Kind,
+			Name:       mwork1.Name,
+			APIVersion: toolsv1alpha1.ManifestworkGVK.Group + "/" + toolsv1alpha1.ManifestworkGVK.Version,
 		},
 	}
 	for _, comp := range appasm.Spec.ManagedClustersComponents[0].Components {
