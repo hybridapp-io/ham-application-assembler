@@ -8,7 +8,6 @@ require (
 	github.com/kubernetes-sigs/application v0.8.1
 	github.com/onsi/gomega v1.10.5
 	github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1
-	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-12-21-17-19.0.20200721224621-79fd9d450d82
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/prometheus/common v0.10.0
 	github.com/spf13/pflag v1.0.5
@@ -60,8 +59,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/open-cluster-management/multicloud-operators-channel v1.0.1-0.20200604182604-841a36e63aa9 // indirect
-	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200603180154-d1d17d718c30 // indirect
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.0.1-2020-05-28-18-29-00.0.20200603172904-efde26079087 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.7.1 // indirect

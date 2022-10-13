@@ -30,6 +30,10 @@ var (
 	// AnnotationDiscoveryTarget defines the annotation used to provide a specific discovery target
 	AnnotationDiscoveryTarget = SchemeGroupVersion.Group + "/hybrid-discovery-target"
 
+	AnnotationHostingSubscription = SchemeGroupVersion.Group + "/hosting-subscription"
+
+	AnnotationSyncSourceSubscription = SchemeGroupVersion.Group + "/sync-source"
+
 	// LabelApplicationPrefix defines the label prefix used as component selector
 	LabelApplicationPrefix = SchemeGroupVersion.Group + "/application-"
 

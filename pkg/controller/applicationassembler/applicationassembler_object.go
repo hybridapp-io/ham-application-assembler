@@ -21,7 +21,6 @@ import (
 	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	// dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 	workapiv1 "github.com/open-cluster-management/api/work/v1"
-	subv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -276,8 +275,8 @@ var (
 	obsoleteAnnotations = []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
 		AnnotationHosting,
-		subv1.AnnotationHosting,
-		subv1.AnnotationSyncSource,
+		toolsv1alpha1.AnnotationHostingSubscription,
+		toolsv1alpha1.AnnotationSyncSourceSubscription,
 	}
 	obsoleteLabels = []string{
 		hdplv1alpha1.ControlledBy,
