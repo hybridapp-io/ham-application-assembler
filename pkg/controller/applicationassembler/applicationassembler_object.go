@@ -141,7 +141,6 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 		hdpl.Name = r.genHybridDeployableName(instance, obj, clusterName)
 		hdpl.Namespace = hdplKey.Namespace
 
-		//dpl := &dplv1.Deployable{}
 		mw := &workapiv1.ManifestWork{}
 		mw.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
 		mw.Namespace = clusterName
@@ -265,7 +264,6 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 }
 
 var (
-	// TODO: move these somewhere else?
 	// SchemeGroupVersion is group version used to register these objects
 	SchemeGroupVersion = schema.GroupVersion{Group: "apps.open-cluster-management.io", Version: "v1"}
 
