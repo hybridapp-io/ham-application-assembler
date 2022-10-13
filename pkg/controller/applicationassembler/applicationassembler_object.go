@@ -275,7 +275,6 @@ var (
 
 	obsoleteAnnotations = []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
-		// dplv1.AnnotationHosting,TODO: remove
 		AnnotationHosting,
 		subv1.AnnotationHosting,
 		subv1.AnnotationSyncSource,
