@@ -1,6 +1,6 @@
 # Application Assembler
 
-[![Build](http://prow.purple-chesterfield.com/badge.svg?jobs=multiarch-image-ham-application-assembler-postsubmit)](http://prow.purple-chesterfield.com/?job=multiarch-image-ham-application-assembler-postsubmit)
+[![Build](http://prow.yellow-chesterfield.com/badge.svg?jobs=multiarch-image-ham-application-assembler-postsubmit)](http://prow.yellow-chesterfield.com/?job=multiarch-image-ham-application-assembler-postsubmit)
 [![GoDoc](https://godoc.org/github.com/hybridapp-io/ham-application-assembler?status.svg)](https://godoc.org/github.com/hybridapp-io/ham-application-assembler)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hybridapp-io/ham-application-assembler)](https://goreportcard.com/report/github.com/hybridapp-io/ham-application-assembler)
 [![Code Coverage](https://codecov.io/gh/hybridapp-io/ham-application-assembler/branch/master/graphs/badge.svg?branch=master)](https://codecov.io/gh/hybridapp-io/ham-application-assembler?branch=master)
