@@ -3,7 +3,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6
 # Update image
 # RUN microdnf update -y && microdnf clean all
 
-LABEL   name="quay.io/hybridappio/ham-application-assembler" \
+LABEL   name="quay.io/cicdtest/ham-application-assembler" \
         summary="Hybrid Application Model - Application Assembler Operator" \
         description="Application Assembler generates Application, Deployables and PlacementRules for the Hybrid Application Model"
         
