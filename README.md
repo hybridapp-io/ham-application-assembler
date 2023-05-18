@@ -11,9 +11,10 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [What is the Application Assembler](#what-is-the-application-assembler)
-- [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
-- [Getting Started](#getting-started)
+- [Application Assembler](#application-assembler)
+  - [What is the Application Assembler](#what-is-the-application-assembler)
+  - [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
+  - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Quick Start](#quick-start)
 
@@ -82,7 +83,7 @@ deployable.core.hybridapp.io "nginx" deleted
 apiVersion: core.hybridapp.io/v1alpha1
 kind: Deployable
 metadata:
-  creationTimestamp: "2020-02-05T22:07:42Z"
+  creationTimestamp: "2020-02-05T22:07:41Z"
   generation: 1
   labels:
     tools.hybridapp.io/application-868c6b0b-7e9a-4a96-8558-ca08bcb623c3: 868c6b0b-7e9a-4a96-8558-ca08bcb623c3
