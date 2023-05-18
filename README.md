@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/hybridapp-io/ham-application-assembler)](https://goreportcard.com/report/github.com/hybridapp-io/ham-application-assembler)
 [![Code Coverage](https://codecov.io/gh/hybridapp-io/ham-application-assembler/branch/master/graphs/badge.svg?branch=master)](https://codecov.io/gh/hybridapp-io/ham-application-assembler?branch=master)
 [![License](https://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
-[![Docker Repository on Quay](https://quay.io/repository/hybridappio/ham-application-assembler/status?token=4b2b7d63-6560-46bf-a421-bec6ddc02a0f "Docker Repository on Quay")](https://quay.io/repository/hybridappio/ham-application-assembler)
+[![Docker Repository on Quay](https://quay.io/repository/cicdtest/ham-application-assembler/status?token=4b2b7d63-6560-46bf-a421-bec6ddc02a0f "Docker Repository on Quay")](https://quay.io/repository/cicdtest/ham-application-assembler)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
