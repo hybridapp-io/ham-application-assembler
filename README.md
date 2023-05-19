@@ -129,7 +129,7 @@ metadata:
     controller: true
     kind: ApplicationAssembler
     name: simple
-    uid: ee408e63-4863-11ea-9dba-00000a101bb8
+    uid: ee408e63-4863-12ea-9dba-00000a101bb8
   resourceVersion: "13422519"
   selfLink: /apis/app.k8s.io/v1beta1/namespaces/default/applications/simple
   uid: ee5fb0fe-4863-11ea-9dba-00000a101bb8
